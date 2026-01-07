@@ -1,4 +1,4 @@
-# Painel de Automações JEA
+# Painel de Automações J&A
 
 Painel web para gerenciamento e execução de automações integradas com n8n. Permite executar e monitorar automações para SharePoint e ClickUp através de uma interface moderna e intuitiva.
 
@@ -130,6 +130,7 @@ export const N8N_WEBHOOKS = {
 ### Estatísticas em Tempo Real
 
 O sistema busca automaticamente do n8n:
+
 - **Total de execuções**: Número total de vezes que o workflow foi executado
 - **Execuções bem-sucedidas**: Execuções que finalizaram sem erros
 - **Execuções com erro**: Execuções que falharam
@@ -137,6 +138,7 @@ O sistema busca automaticamente do n8n:
 - **Status**: Estado atual da automação (ativa, inativa ou erro)
 
 As estatísticas são atualizadas:
+
 - Ao carregar a página
 - Após cada execução de automação
 
