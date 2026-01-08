@@ -7,4 +7,5 @@ export { default as CheckIcon } from "./CheckIcon";
 export { default as CloseIcon } from "./CloseIcon";
 export { default as InfoIcon } from "./InfoIcon";
 export { default as SpinnerIcon } from "./SpinnerIcon";
+export { default as TrashIcon } from "./TrashIcon";
 
