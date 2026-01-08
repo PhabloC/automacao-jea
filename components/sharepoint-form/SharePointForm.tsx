@@ -2,18 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { MONTHS } from "@/lib/constants";
-import { getClients, addClient, removeClient, clientNameExists, type Client } from "@/lib/clients";
+import {
+  getClients,
+  addClient,
+  removeClient,
+  clientNameExists,
+  type Client,
+} from "@/lib/clients";
 import { SpinnerIcon, TrashIcon } from "@/svg";
-
-interface SharePointFormProps {
-  onExecute: (
-    clientId: string,
-    monthId: string,
-    clientName: string,
-    monthName: string
-  ) => Promise<void>;
-  isExecuting: boolean;
-}
+import { SharePointFormProps } from "./types";
 
 export default function SharePointForm({
   onExecute,
@@ -39,7 +36,10 @@ export default function SharePointForm({
   // Fechar dropdown ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false);
       }
     };
@@ -76,13 +76,18 @@ export default function SharePointForm({
     );
   };
 
-  const handleAddClient = (e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
+  const handleAddClient = async (
+    e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent
+  ) => {
     if (e) {
       e.preventDefault();
     }
-    
+
     if (!newClientName.trim()) {
-      setErrors((prev) => ({ ...prev, newClient: "Por favor, insira um nome para o cliente" }));
+      setErrors((prev) => ({
+        ...prev,
+        newClient: "Por favor, insira um nome para o cliente",
+      }));
       return;
     }
 
@@ -96,6 +101,9 @@ export default function SharePointForm({
     setNewClientName("");
     setErrors((prev) => ({ ...prev, newClient: undefined }));
     setSelectedClient(newClient.id);
+
+    // Sincronizar com n8n
+    await syncClientToN8N("add", "sharepoint", newClient);
   };
 
   const handleRemoveClient = (e: React.MouseEvent, clientId: string) => {
@@ -180,11 +188,14 @@ export default function SharePointForm({
             >
               <span>
                 {selectedClient
-                  ? clients.find((c) => c.id === selectedClient)?.name || "Selecione um cliente"
+                  ? clients.find((c) => c.id === selectedClient)?.name ||
+                    "Selecione um cliente"
                   : "Selecione um cliente"}
               </span>
               <svg
-                className={`w-5 h-5 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                className={`w-5 h-5 transition-transform ${
+                  isDropdownOpen ? "rotate-180" : ""
+                }`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -256,7 +267,11 @@ export default function SharePointForm({
               w-full px-4 py-3 rounded-lg border bg-white dark:bg-gray-700 text-gray-900 dark:text-white
               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors
               disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed
-              ${errors.month ? "border-red-500" : "border-gray-300 dark:border-gray-600"}
+              ${
+                errors.month
+                  ? "border-red-500"
+                  : "border-gray-300 dark:border-gray-600"
+              }
             `}
           >
             <option value="">Selecione um mês</option>
@@ -280,8 +295,8 @@ export default function SharePointForm({
               Resumo da execução:
             </p>
             <p className="text-sm text-red-200">
-              Criar pasta para o cliente <strong>{selectedClientName}</strong> no
-              mês de <strong>{selectedMonthName}</strong>
+              Criar pasta para o cliente <strong>{selectedClientName}</strong>{" "}
+              no mês de <strong>{selectedMonthName}</strong>
             </p>
           </div>
         )}
@@ -313,4 +328,6 @@ export default function SharePointForm({
     </form>
   );
 }
-
+function syncClientToN8N(arg0: string, arg1: string, newClient: Client) {
+  throw new Error("Function not implemented.");
+}
