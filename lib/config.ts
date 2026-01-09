@@ -1,8 +1,8 @@
 // URLs dos webhooks do n8n
 export const N8N_WEBHOOKS = {
   sharepoint:
-    "https://gateway.jeamarketing.com.br/webhook/create-folder-sharepoint",
-  clickup: "", // Será adicionado quando o webhook do ClickUp estiver pronto
+    "https://gateway.jeamarketing.com.br/webhook/create-folder-clickup",
+  clickup: "https://gateway.jeamarketing.com.br/webhook/create-folder-clickup",
 } as const;
 
 // Configurações da API do n8n para buscar estatísticas

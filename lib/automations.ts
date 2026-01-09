@@ -18,7 +18,10 @@ export interface ExecutionResult {
 }
 
 // Definições das automações
-export const automationDefinitions: Omit<AutomationData, "executionCount" | "successCount" | "errorCount" | "status" | "lastRun">[] = [
+export const automationDefinitions: Omit<
+  AutomationData,
+  "executionCount" | "successCount" | "errorCount" | "status" | "lastRun"
+>[] = [
   {
     id: "sharepoint",
     title: "Criar Pasta no SharePoint",
@@ -47,7 +50,12 @@ export function createInitialAutomations(): AutomationData[] {
 // Executa uma automação
 export async function executeAutomation(
   automationId: string,
-  params?: { clientId?: string; monthId?: string; clientName?: string; monthName?: string }
+  params?: {
+    clientId?: string;
+    monthId?: string;
+    clientName?: string;
+    monthName?: string;
+  }
 ): Promise<ExecutionResult> {
   const now = new Date();
   const timeString = now.toLocaleTimeString("pt-BR", {
@@ -58,7 +66,7 @@ export async function executeAutomation(
   // Para SharePoint, faz chamada real ao webhook do n8n
   if (automationId === "sharepoint" && params?.clientId && params?.monthId) {
     const webhookUrl = N8N_WEBHOOKS.sharepoint;
-    
+
     if (!webhookUrl) {
       return {
         success: false,
@@ -95,8 +103,9 @@ export async function executeAutomation(
 
       // Assume que o n8n retorna um objeto com success e message
       const success = data?.success !== false; // Considera sucesso se não for explicitamente false
-      const message = data?.message || 
-        (success 
+      const message =
+        data?.message ||
+        (success
           ? `Pasta criada com sucesso para ${params.clientName} - ${params.monthName}!`
           : `Erro ao criar pasta para ${params.clientName} - ${params.monthName}. Tente novamente.`);
 
@@ -109,7 +118,7 @@ export async function executeAutomation(
       const clientName = params.clientName || "o cliente selecionado";
       const monthName = params.monthName || "o mês selecionado";
       console.error("Erro ao chamar webhook:", error);
-      
+
       return {
         success: false,
         message: `Erro ao conectar com o servidor. Não foi possível criar pasta para ${clientName} - ${monthName}.`,
@@ -133,7 +142,9 @@ export async function executeAutomation(
       : `Erro ao criar tarefas no ClickUp para ${clientName}. Tente novamente.`;
   } else {
     message = success
-      ? `${automationId === "sharepoint" ? "Pasta" : "Tarefas"} criada(s) com sucesso!`
+      ? `${
+          automationId === "sharepoint" ? "Pasta" : "Tarefas"
+        } criada(s) com sucesso!`
       : "Erro ao executar automação. Tente novamente.";
   }
 
@@ -168,10 +179,16 @@ export async function fetchN8NStatistics(
       `/api/n8n/statistics?automationId=${automationId}`
     );
 
-    console.log("[Client] Status da resposta:", response.status, response.statusText);
+    console.log(
+      "[Client] Status da resposta:",
+      response.status,
+      response.statusText
+    );
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "Não foi possível ler o erro");
+      const errorText = await response
+        .text()
+        .catch(() => "Não foi possível ler o erro");
       console.error(
         `[Client] Erro ao buscar estatísticas: ${response.status} ${response.statusText}`,
         errorText
@@ -200,4 +217,3 @@ export async function fetchN8NStatistics(
     };
   }
 }
-

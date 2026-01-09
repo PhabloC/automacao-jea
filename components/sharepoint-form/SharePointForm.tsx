@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MONTHS } from "@/lib/constants";
 import {
   getClients,
   addClient,
@@ -14,7 +13,10 @@ import {
 } from "@/lib/clients";
 import { SpinnerIcon, TrashIcon } from "@/svg";
 import { SharePointFormProps } from "./types";
-import AlertModal, { type AlertModalType } from "@/components/alert-modal/AlertModal";
+import AlertModal, {
+  type AlertModalType,
+} from "@/components/alert-modal/AlertModal";
+import { MONTHS } from "@/lib/constants";
 
 export default function SharePointForm({
   onExecute,
@@ -31,7 +33,7 @@ export default function SharePointForm({
     month?: string;
     newClient?: string;
   }>({});
-  
+
   // Estados do modal
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -45,7 +47,7 @@ export default function SharePointForm({
     title: "",
     message: "",
   });
-  
+
   // Estado para armazenar dados temporários (ex: cliente a ser excluído)
   const [pendingAction, setPendingAction] = useState<{
     type: "delete" | "create";
@@ -175,7 +177,7 @@ export default function SharePointForm({
 
       setNewClientName("");
       setErrors((prev) => ({ ...prev, newClient: undefined }));
-      
+
       // Mostrar modal de sucesso
       setModalState({
         isOpen: true,
@@ -198,11 +200,11 @@ export default function SharePointForm({
 
   const handleRemoveClient = async (e: React.MouseEvent, clientId: string) => {
     e.stopPropagation();
-    
+
     // Buscar o cliente para mostrar no confirm
-    const clientToDelete = clients.find(c => c.id === clientId);
+    const clientToDelete = clients.find((c) => c.id === clientId);
     const clientName = clientToDelete?.name || "este cliente";
-    
+
     // Mostrar modal de confirmação
     setPendingAction({ type: "delete", clientId, clientName });
     setModalState({
@@ -218,8 +220,11 @@ export default function SharePointForm({
 
   const executeDeleteClient = async (clientId: string, clientName: string) => {
     try {
-      console.log("Tentando excluir cliente:", { id: clientId, name: clientName });
-      
+      console.log("Tentando excluir cliente:", {
+        id: clientId,
+        name: clientName,
+      });
+
       // Deletar cliente no webhook n8n usando o ID real do banco de dados
       await deleteClientInWebhook(clientId);
 
@@ -469,9 +474,15 @@ export default function SharePointForm({
         title={modalState.title}
         message={modalState.message}
         type={modalState.type}
-        confirmText={modalState.type === "confirm" || modalState.type === "warning" ? "Confirmar" : "OK"}
+        confirmText={
+          modalState.type === "confirm" || modalState.type === "warning"
+            ? "Confirmar"
+            : "OK"
+        }
         cancelText="Cancelar"
-        showCancel={modalState.type === "confirm" || modalState.type === "warning"}
+        showCancel={
+          modalState.type === "confirm" || modalState.type === "warning"
+        }
       />
     </form>
   );

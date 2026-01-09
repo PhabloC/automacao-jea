@@ -1,26 +1,3 @@
-// Clientes para SharePoint
-export const CLIENTS = [
-  { id: "1", name: "Amorim" },
-  { id: "2", name: "Bioconverter" },
-  { id: "3", name: "Clínica Scoppo" },
-  { id: "4", name: "Desintec" },
-  { id: "5", name: "Impacta" },
-  { id: "6", name: "J&A" },
-  { id: "7", name: "Júpiter" },
-] as const;
-
-// Clientes para ClickUp
-export const CLICKUP_CLIENTS = [
-  { id: "1", name: "Amorim Tennis" },
-  { id: "2", name: "Bioconverter" },
-  { id: "3", name: "Desintec" },
-  { id: "4", name: "Impacta" },
-  { id: "5", name: "Júpiter" },
-  { id: "6", name: "Refrin" },
-  { id: "7", name: "Clínica Scoppo" },
-  { id: "8", name: "J&A" },
-] as const;
-
 export const MONTHS = [
   { id: "1", name: "Janeiro" },
   { id: "2", name: "Fevereiro" },
@@ -36,3 +13,15 @@ export const MONTHS = [
   { id: "12", name: "Dezembro" },
 ] as const;
 
+// Gera lista de anos (do ano atual até 5 anos no futuro)
+export const YEARS = (() => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let i = 0; i <= 5; i++) {
+    years.push({
+      id: String(currentYear + i),
+      name: String(currentYear + i),
+    });
+  }
+  return years;
+})();
