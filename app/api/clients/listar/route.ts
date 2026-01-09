@@ -46,6 +46,11 @@ export async function GET(request: NextRequest) {
     }
 
     console.log("[API Clients] Clientes processados:", clients.length);
+    
+    // Log dos IDs para debug
+    if (clients.length > 0) {
+      console.log("[API Clients] IDs dos clientes:", clients.map(c => ({ id: c.id, name: c.name })));
+    }
 
     return NextResponse.json({ clients }, { status: 200 });
   } catch (error) {

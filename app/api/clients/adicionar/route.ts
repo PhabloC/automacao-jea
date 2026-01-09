@@ -37,11 +37,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data = await response.json();
-    console.log("[API Clients] Cliente adicionado com sucesso");
+    // Processar resposta do webhook
+    let clientData = null;
+    const contentType = response.headers.get("content-type");
+    const responseText = await response.text();
+    
+    if (responseText) {
+      if (contentType?.includes("application/json")) {
+        try {
+          clientData = JSON.parse(responseText);
+        } catch {
+          console.warn("[API Clients] Resposta não é JSON válido, mas continua");
+        }
+      } else {
+        console.warn("[API Clients] Resposta não é JSON:", contentType);
+      }
+    }
+
+    // Extrair o cliente criado da resposta
+    let createdClient = null;
+    if (clientData) {
+      // Pode retornar em diferentes formatos
+      if (clientData.id && clientData.clientes) {
+        // Formato direto: { id, clientes }
+        createdClient = {
+          id: String(clientData.id),
+          name: clientData.clientes,
+        };
+      } else if (clientData.data && clientData.data.id && clientData.data.clientes) {
+        // Formato com wrapper: { data: { id, clientes } }
+        createdClient = {
+          id: String(clientData.data.id),
+          name: clientData.data.clientes,
+        };
+      } else if (Array.isArray(clientData) && clientData.length > 0) {
+        // Formato array
+        const item = clientData[0];
+        if (item.id && item.clientes) {
+          createdClient = {
+            id: String(item.id),
+            name: item.clientes,
+          };
+        }
+      }
+    }
+
+    console.log("[API Clients] Cliente adicionado com sucesso:", createdClient);
 
     return NextResponse.json(
-      { success: true, data },
+      { success: true, data: clientData, client: createdClient },
       { status: 200 }
     );
   } catch (error) {

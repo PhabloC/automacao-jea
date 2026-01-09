@@ -179,7 +179,10 @@ export async function loadClientsFromWebhook(
 }
 
 // Função para criar um cliente no webhook n8n
-export async function createClientInWebhook(clientName: string): Promise<void> {
+// Retorna o cliente criado com o ID real do banco de dados
+export async function createClientInWebhook(
+  clientName: string
+): Promise<Client | null> {
   try {
     // Usar rota de API do Next.js para evitar problemas de CORS
     const response = await fetch("/api/clients/adicionar", {
@@ -200,7 +203,17 @@ export async function createClientInWebhook(clientName: string): Promise<void> {
     }
 
     const data = await response.json();
-    console.log("Cliente adicionado:", data);
+    console.log("Cliente adicionado - resposta completa:", data);
+
+    // Retornar o cliente criado com ID real se disponível
+    if (data.client) {
+      console.log("Cliente criado com ID do banco:", data.client);
+      return data.client;
+    }
+
+    // Se não retornou o cliente na resposta, retorna null
+    // O sistema vai recarregar a lista depois
+    return null;
   } catch (error) {
     console.error("Erro ao criar cliente no webhook:", error);
     throw error;
@@ -210,6 +223,20 @@ export async function createClientInWebhook(clientName: string): Promise<void> {
 // Função para deletar um cliente no webhook n8n
 export async function deleteClientInWebhook(clientId: string): Promise<void> {
   try {
+    // Validar que o ID é um número válido antes de enviar
+    const idNumber = parseInt(clientId, 10);
+    if (isNaN(idNumber) || idNumber <= 0) {
+      throw new Error(`ID inválido para exclusão: ${clientId}`);
+    }
+
+    console.log(
+      "Tentando excluir cliente com ID:",
+      idNumber,
+      "(string original:",
+      clientId,
+      ")"
+    );
+
     // Usar rota de API do Next.js para evitar problemas de CORS
     const response = await fetch("/api/clients/excluir", {
       method: "POST",
@@ -217,19 +244,33 @@ export async function deleteClientInWebhook(clientId: string): Promise<void> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        id: clientId,
+        id: idNumber, // Enviar como número
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || `Erro ao deletar cliente: ${response.status}`
-      );
+      let errorMessage = `Erro ao deletar cliente: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        // Se não conseguir parsear JSON, usa a mensagem padrão
+      }
+      throw new Error(errorMessage);
     }
 
-    const data = await response.json();
-    console.log("Cliente excluído:", data);
+    // Tentar parsear JSON, mas não falhar se a resposta estiver vazia
+    let data = null;
+    try {
+      const text = await response.text();
+      if (text) {
+        data = JSON.parse(text);
+      }
+    } catch {
+      // Se não conseguir parsear, assume que foi sucesso (resposta vazia é OK)
+      console.log("Resposta vazia ou não-JSON, assumindo sucesso");
+    }
+    console.log("Cliente excluído com sucesso:", data);
   } catch (error) {
     console.error("Erro ao deletar cliente no webhook:", error);
     throw error;

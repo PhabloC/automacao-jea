@@ -84,25 +84,32 @@ export default function ClickUpForm({
       const trimmedName = newClientName.trim();
       
       // Criar cliente no webhook n8n primeiro
-      await createClientInWebhook(trimmedName);
+      const createdClient = await createClientInWebhook(trimmedName);
       
-      // Recarregar clientes do webhook para garantir sincronização
+      // Recarregar clientes do webhook para garantir sincronização e obter IDs atualizados
       const updatedClients = await loadClientsFromWebhook("clickup");
       setClients(updatedClients);
       
-      // Buscar o cliente recém-criado pelo nome (ignorando maiúsculas/minúsculas)
-      const createdClient = updatedClients.find(
-        (client) => client.name.toLowerCase().trim() === trimmedName.toLowerCase()
-      );
-
-      // Selecionar o cliente criado, ou o último da lista se não encontrar
-      if (createdClient) {
+      // Selecionar o cliente criado usando o ID retornado ou buscar pelo nome
+      if (createdClient && createdClient.id) {
+        // Usar o ID retornado pelo webhook (ID real do banco de dados)
+        console.log("Selecionando cliente criado com ID:", createdClient.id);
         setSelectedClient(createdClient.id);
       } else {
-        // Caso não encontre pelo nome, selecionar o último cliente da lista
-        const lastClient = updatedClients[updatedClients.length - 1];
-        if (lastClient) {
-          setSelectedClient(lastClient.id);
+        // Se não retornou o cliente, buscar pelo nome na lista atualizada
+        const foundClient = updatedClients.find(
+          (client) => client.name.toLowerCase().trim() === trimmedName.toLowerCase()
+        );
+        if (foundClient) {
+          console.log("Cliente encontrado na lista com ID:", foundClient.id);
+          setSelectedClient(foundClient.id);
+        } else {
+          // Caso não encontre, selecionar o último cliente da lista
+          const lastClient = updatedClients[updatedClients.length - 1];
+          if (lastClient) {
+            console.log("Selecionando último cliente com ID:", lastClient.id);
+            setSelectedClient(lastClient.id);
+          }
         }
       }
       
@@ -119,9 +126,16 @@ export default function ClickUpForm({
 
   const handleRemoveClient = async (e: React.MouseEvent, clientId: string) => {
     e.stopPropagation();
-    if (window.confirm("Tem certeza que deseja remover este cliente?")) {
+    
+    // Buscar o cliente para mostrar no confirm
+    const clientToDelete = clients.find(c => c.id === clientId);
+    const clientName = clientToDelete?.name || "este cliente";
+    
+    if (window.confirm(`Tem certeza que deseja remover o cliente "${clientName}" (ID: ${clientId})?`)) {
       try {
-        // Deletar cliente no webhook n8n
+        console.log("Tentando excluir cliente:", { id: clientId, name: clientName });
+        
+        // Deletar cliente no webhook n8n usando o ID real do banco de dados
         await deleteClientInWebhook(clientId);
 
         // Recarregar clientes do webhook para garantir sincronização
