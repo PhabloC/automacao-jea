@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { getClients, addClient, removeClient, clientNameExists, loadClientsFromWebhook, createClientInWebhook, deleteClientInWebhook, type Client } from "@/lib/clients";
 import { SpinnerIcon, TrashIcon } from "@/svg";
+import AlertModal, { type AlertModalType } from "@/components/alert-modal/AlertModal";
 
 interface ClickUpFormProps {
   onExecute: (clientId: string, clientName: string) => Promise<void>;
@@ -22,6 +23,27 @@ export default function ClickUpForm({
     client?: string;
     newClient?: string;
   }>({});
+  
+  // Estados do modal
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: AlertModalType;
+    title: string;
+    message: string;
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    type: "confirm",
+    title: "",
+    message: "",
+  });
+  
+  // Estado para armazenar dados temporários (ex: cliente a ser excluído)
+  const [pendingAction, setPendingAction] = useState<{
+    type: "delete" | "create";
+    clientId?: string;
+    clientName?: string;
+  } | null>(null);
 
   // Carregar clientes ao montar o componente
   useEffect(() => {
@@ -80,9 +102,22 @@ export default function ClickUpForm({
       return;
     }
 
+    // Mostrar modal de confirmação antes de criar
+    const trimmedName = newClientName.trim();
+    setPendingAction({ type: "create", clientName: trimmedName });
+    setModalState({
+      isOpen: true,
+      type: "confirm",
+      title: "Confirmar Criação de Cliente",
+      message: `Deseja criar o cliente "${trimmedName}"?`,
+      onConfirm: async () => {
+        await executeCreateClient(trimmedName);
+      },
+    });
+  };
+
+  const executeCreateClient = async (trimmedName: string) => {
     try {
-      const trimmedName = newClientName.trim();
-      
       // Criar cliente no webhook n8n primeiro
       const createdClient = await createClientInWebhook(trimmedName);
       
@@ -115,12 +150,24 @@ export default function ClickUpForm({
       
       setNewClientName("");
       setErrors((prev) => ({ ...prev, newClient: undefined }));
+      
+      // Mostrar modal de sucesso
+      setModalState({
+        isOpen: true,
+        type: "success",
+        title: "Cliente Criado",
+        message: `O cliente "${trimmedName}" foi criado com sucesso!`,
+      });
     } catch (error) {
       console.error("Erro ao adicionar cliente:", error);
-      setErrors((prev) => ({
-        ...prev,
-        newClient: "Erro ao adicionar cliente. Tente novamente.",
-      }));
+      setModalState({
+        isOpen: true,
+        type: "error",
+        title: "Erro ao Criar Cliente",
+        message: "Erro ao adicionar cliente. Tente novamente.",
+      });
+    } finally {
+      setPendingAction(null);
     }
   };
 
@@ -131,25 +178,52 @@ export default function ClickUpForm({
     const clientToDelete = clients.find(c => c.id === clientId);
     const clientName = clientToDelete?.name || "este cliente";
     
-    if (window.confirm(`Tem certeza que deseja remover o cliente "${clientName}" (ID: ${clientId})?`)) {
-      try {
-        console.log("Tentando excluir cliente:", { id: clientId, name: clientName });
-        
-        // Deletar cliente no webhook n8n usando o ID real do banco de dados
-        await deleteClientInWebhook(clientId);
+    // Mostrar modal de confirmação
+    setPendingAction({ type: "delete", clientId, clientName });
+    setModalState({
+      isOpen: true,
+      type: "warning",
+      title: "Confirmar Exclusão",
+      message: `Tem certeza que deseja remover o cliente "${clientName}"?\n\nEsta ação não pode ser desfeita.`,
+      onConfirm: async () => {
+        await executeDeleteClient(clientId, clientName);
+      },
+    });
+  };
 
-        // Recarregar clientes do webhook para garantir sincronização
-        const updatedClients = await loadClientsFromWebhook("clickup");
-        setClients(updatedClients);
+  const executeDeleteClient = async (clientId: string, clientName: string) => {
+    try {
+      console.log("Tentando excluir cliente:", { id: clientId, name: clientName });
+      
+      // Deletar cliente no webhook n8n usando o ID real do banco de dados
+      await deleteClientInWebhook(clientId);
 
-        // Se o cliente removido estava selecionado, limpar a seleção
-        if (selectedClient === clientId) {
-          setSelectedClient("");
-        }
-      } catch (error) {
-        console.error("Erro ao remover cliente:", error);
-        alert("Erro ao remover cliente. Tente novamente.");
+      // Recarregar clientes do webhook para garantir sincronização
+      const updatedClients = await loadClientsFromWebhook("clickup");
+      setClients(updatedClients);
+
+      // Se o cliente removido estava selecionado, limpar a seleção
+      if (selectedClient === clientId) {
+        setSelectedClient("");
       }
+
+      // Mostrar modal de sucesso
+      setModalState({
+        isOpen: true,
+        type: "success",
+        title: "Cliente Excluído",
+        message: `O cliente "${clientName}" foi excluído com sucesso!`,
+      });
+    } catch (error) {
+      console.error("Erro ao remover cliente:", error);
+      setModalState({
+        isOpen: true,
+        type: "error",
+        title: "Erro ao Excluir Cliente",
+        message: "Erro ao remover cliente. Tente novamente.",
+      });
+    } finally {
+      setPendingAction(null);
     }
   };
 
@@ -314,6 +388,19 @@ export default function ClickUpForm({
           )}
         </button>
       </div>
+
+      {/* Modal de Alerta */}
+      <AlertModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={modalState.onConfirm}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        confirmText={modalState.type === "confirm" || modalState.type === "warning" ? "Confirmar" : "OK"}
+        cancelText="Cancelar"
+        showCancel={modalState.type === "confirm" || modalState.type === "warning"}
+      />
     </form>
   );
 }
