@@ -7,6 +7,9 @@ import {
   addClient,
   removeClient,
   clientNameExists,
+  loadClientsFromWebhook,
+  createClientInWebhook,
+  deleteClientInWebhook,
   type Client,
 } from "@/lib/clients";
 import { SpinnerIcon, TrashIcon } from "@/svg";
@@ -30,7 +33,12 @@ export default function SharePointForm({
 
   // Carregar clientes ao montar o componente
   useEffect(() => {
-    setClients(getClients("sharepoint"));
+    const loadClients = async () => {
+      // Primeiro carrega do webhook
+      const webhookClients = await loadClientsFromWebhook("sharepoint");
+      setClients(webhookClients);
+    };
+    loadClients();
   }, []);
 
   // Fechar dropdown ao clicar fora
@@ -96,23 +104,62 @@ export default function SharePointForm({
       return;
     }
 
-    const newClient = addClient("sharepoint", newClientName);
-    setClients(getClients("sharepoint"));
-    setNewClientName("");
-    setErrors((prev) => ({ ...prev, newClient: undefined }));
-    setSelectedClient(newClient.id);
+    try {
+      const trimmedName = newClientName.trim();
 
-    // Sincronizar com n8n
-    await syncClientToN8N("add", "sharepoint", newClient);
+      // Criar cliente no webhook n8n primeiro
+      await createClientInWebhook(trimmedName);
+
+      // Recarregar clientes do webhook para garantir sincronização
+      const updatedClients = await loadClientsFromWebhook("sharepoint");
+      setClients(updatedClients);
+
+      // Buscar o cliente recém-criado pelo nome (ignorando maiúsculas/minúsculas)
+      const createdClient = updatedClients.find(
+        (client) =>
+          client.name.toLowerCase().trim() === trimmedName.toLowerCase()
+      );
+
+      // Selecionar o cliente criado, ou o último da lista se não encontrar
+      if (createdClient) {
+        setSelectedClient(createdClient.id);
+      } else {
+        // Caso não encontre pelo nome, selecionar o último cliente da lista
+        const lastClient = updatedClients[updatedClients.length - 1];
+        if (lastClient) {
+          setSelectedClient(lastClient.id);
+        }
+      }
+
+      setNewClientName("");
+      setErrors((prev) => ({ ...prev, newClient: undefined }));
+    } catch (error) {
+      console.error("Erro ao adicionar cliente:", error);
+      setErrors((prev) => ({
+        ...prev,
+        newClient: "Erro ao adicionar cliente. Tente novamente.",
+      }));
+    }
   };
 
-  const handleRemoveClient = (e: React.MouseEvent, clientId: string) => {
+  const handleRemoveClient = async (e: React.MouseEvent, clientId: string) => {
     e.stopPropagation();
     if (window.confirm("Tem certeza que deseja remover este cliente?")) {
-      removeClient("sharepoint", clientId);
-      setClients(getClients("sharepoint"));
-      if (selectedClient === clientId) {
-        setSelectedClient("");
+      try {
+        // Deletar cliente no webhook n8n
+        await deleteClientInWebhook(clientId);
+
+        // Recarregar clientes do webhook para garantir sincronização
+        const updatedClients = await loadClientsFromWebhook("sharepoint");
+        setClients(updatedClients);
+
+        // Se o cliente removido estava selecionado, limpar a seleção
+        if (selectedClient === clientId) {
+          setSelectedClient("");
+        }
+      } catch (error) {
+        console.error("Erro ao remover cliente:", error);
+        alert("Erro ao remover cliente. Tente novamente.");
       }
     }
   };
@@ -327,7 +374,4 @@ export default function SharePointForm({
       </div>
     </form>
   );
-}
-function syncClientToN8N(arg0: string, arg1: string, newClient: Client) {
-  throw new Error("Function not implemented.");
 }

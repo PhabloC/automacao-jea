@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { getClients, addClient, removeClient, clientNameExists, type Client } from "@/lib/clients";
+import { getClients, addClient, removeClient, clientNameExists, loadClientsFromWebhook, createClientInWebhook, deleteClientInWebhook, type Client } from "@/lib/clients";
 import { SpinnerIcon, TrashIcon } from "@/svg";
 
 interface ClickUpFormProps {
@@ -25,7 +25,12 @@ export default function ClickUpForm({
 
   // Carregar clientes ao montar o componente
   useEffect(() => {
-    setClients(getClients("clickup"));
+    const loadClients = async () => {
+      // Primeiro carrega do webhook
+      const webhookClients = await loadClientsFromWebhook("clickup");
+      setClients(webhookClients);
+    };
+    loadClients();
   }, []);
 
   // Fechar dropdown ao clicar fora
@@ -60,7 +65,7 @@ export default function ClickUpForm({
     await onExecute(selectedClient, selectedClientName);
   };
 
-  const handleAddClient = (e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
+  const handleAddClient = async (e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
     if (e) {
       e.preventDefault();
     }
@@ -75,20 +80,61 @@ export default function ClickUpForm({
       return;
     }
 
-    const newClient = addClient("clickup", newClientName);
-    setClients(getClients("clickup"));
-    setNewClientName("");
-    setErrors((prev) => ({ ...prev, newClient: undefined }));
-    setSelectedClient(newClient.id);
+    try {
+      const trimmedName = newClientName.trim();
+      
+      // Criar cliente no webhook n8n primeiro
+      await createClientInWebhook(trimmedName);
+      
+      // Recarregar clientes do webhook para garantir sincronização
+      const updatedClients = await loadClientsFromWebhook("clickup");
+      setClients(updatedClients);
+      
+      // Buscar o cliente recém-criado pelo nome (ignorando maiúsculas/minúsculas)
+      const createdClient = updatedClients.find(
+        (client) => client.name.toLowerCase().trim() === trimmedName.toLowerCase()
+      );
+
+      // Selecionar o cliente criado, ou o último da lista se não encontrar
+      if (createdClient) {
+        setSelectedClient(createdClient.id);
+      } else {
+        // Caso não encontre pelo nome, selecionar o último cliente da lista
+        const lastClient = updatedClients[updatedClients.length - 1];
+        if (lastClient) {
+          setSelectedClient(lastClient.id);
+        }
+      }
+      
+      setNewClientName("");
+      setErrors((prev) => ({ ...prev, newClient: undefined }));
+    } catch (error) {
+      console.error("Erro ao adicionar cliente:", error);
+      setErrors((prev) => ({
+        ...prev,
+        newClient: "Erro ao adicionar cliente. Tente novamente.",
+      }));
+    }
   };
 
-  const handleRemoveClient = (e: React.MouseEvent, clientId: string) => {
+  const handleRemoveClient = async (e: React.MouseEvent, clientId: string) => {
     e.stopPropagation();
     if (window.confirm("Tem certeza que deseja remover este cliente?")) {
-      removeClient("clickup", clientId);
-      setClients(getClients("clickup"));
-      if (selectedClient === clientId) {
-        setSelectedClient("");
+      try {
+        // Deletar cliente no webhook n8n
+        await deleteClientInWebhook(clientId);
+
+        // Recarregar clientes do webhook para garantir sincronização
+        const updatedClients = await loadClientsFromWebhook("clickup");
+        setClients(updatedClients);
+
+        // Se o cliente removido estava selecionado, limpar a seleção
+        if (selectedClient === clientId) {
+          setSelectedClient("");
+        }
+      } catch (error) {
+        console.error("Erro ao remover cliente:", error);
+        alert("Erro ao remover cliente. Tente novamente.");
       }
     }
   };

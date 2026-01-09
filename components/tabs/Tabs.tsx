@@ -31,11 +31,7 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
                   <span
                     className={`
                       flex items-center justify-center
-                      ${
-                        activeTab === tab.id
-                          ? "text-red-400"
-                          : "text-gray-500"
-                      }
+                      ${activeTab === tab.id ? "text-red-400" : "text-gray-500"}
                     `}
                   >
                     {tab.icon}
@@ -44,7 +40,7 @@ export default function Tabs({ tabs, defaultTab }: TabsProps) {
                 <span>{tab.label}</span>
               </div>
               {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-black to-red-950 rounded-full"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-black to-red-950 rounded-full"></div>
               )}
             </button>
           ))}
