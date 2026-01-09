@@ -1,7 +1,7 @@
 // URLs dos webhooks do n8n
 export const N8N_WEBHOOKS = {
   sharepoint:
-    "https://gateway.jeamarketing.com.br/webhook/create-folder-clickup",
+    "https://gateway.jeamarketing.com.br/webhook/create-folder-sharepoint",
   clickup: "https://gateway.jeamarketing.com.br/webhook/create-folder-clickup",
 } as const;
 

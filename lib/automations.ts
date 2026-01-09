@@ -127,30 +127,70 @@ export async function executeAutomation(
     }
   }
 
-  // Para outras automações (ClickUp por enquanto), simula a execução
-  // Isso será atualizado quando o webhook do ClickUp estiver pronto
-  const delay = Math.random() * 1500 + 1500;
-  await new Promise((resolve) => setTimeout(resolve, delay));
-
-  const success = Math.random() > 0.05;
-
-  let message = "";
+  // Para ClickUp, faz chamada real ao webhook do n8n
   if (automationId === "clickup" && params?.clientId) {
-    const clientName = params.clientName || "o cliente selecionado";
-    message = success
-      ? `Tarefas criadas com sucesso no ClickUp para ${clientName}!`
-      : `Erro ao criar tarefas no ClickUp para ${clientName}. Tente novamente.`;
-  } else {
-    message = success
-      ? `${
-          automationId === "sharepoint" ? "Pasta" : "Tarefas"
-        } criada(s) com sucesso!`
-      : "Erro ao executar automação. Tente novamente.";
+    const webhookUrl = N8N_WEBHOOKS.clickup;
+
+    if (!webhookUrl) {
+      return {
+        success: false,
+        message: "Webhook não configurado para esta automação",
+        timestamp: `Hoje às ${timeString}`,
+      };
+    }
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clientId: params.clientId,
+          clientName: params.clientName,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const clientName = params.clientName || "o cliente selecionado";
+        return {
+          success: false,
+          message: `Erro ao criar tarefas no ClickUp para ${clientName}. Status: ${response.status}`,
+          timestamp: `Hoje às ${timeString}`,
+        };
+      }
+
+      // Assume que o n8n retorna um objeto com success e message
+      const success = data?.success !== false; // Considera sucesso se não for explicitamente false
+      const message =
+        data?.message ||
+        (success
+          ? `Tarefas criadas com sucesso no ClickUp para ${params.clientName}!`
+          : `Erro ao criar tarefas no ClickUp para ${params.clientName}. Tente novamente.`);
+
+      return {
+        success,
+        message,
+        timestamp: `Hoje às ${timeString}`,
+      };
+    } catch (error) {
+      const clientName = params.clientName || "o cliente selecionado";
+      console.error("Erro ao chamar webhook:", error);
+
+      return {
+        success: false,
+        message: `Erro ao conectar com o servidor. Não foi possível criar tarefas no ClickUp para ${clientName}.`,
+        timestamp: `Hoje às ${timeString}`,
+      };
+    }
   }
 
+  // Para outras automações, retorna erro
   return {
-    success,
-    message,
+    success: false,
+    message: "Automação não implementada ou parâmetros inválidos",
     timestamp: `Hoje às ${timeString}`,
   };
 }
