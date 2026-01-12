@@ -13,7 +13,7 @@ export const MONTHS = [
   { id: "12", name: "Dezembro" },
 ] as const;
 
-// Gera lista de anos (do ano atual até 5 anos no futuro)
+//VERIFICAR SE VAI SER USADO
 export const YEARS = (() => {
   const currentYear = new Date().getFullYear();
   const years = [];

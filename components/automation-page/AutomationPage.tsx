@@ -35,12 +35,13 @@ export default function AutomationPage({
         </h2>
         {automation.id === "sharepoint" ? (
           <SharePointForm
-            onExecute={async (clientId, monthId, clientName, monthName) => {
+            onExecute={async (clientId, monthId, clientName, monthName, quantidadeDePost) => {
               await onExecute(automation.id, {
                 clientId,
                 monthId,
                 clientName,
                 monthName,
+                quantidadeDePost,
               });
             }}
             isExecuting={executing}

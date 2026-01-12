@@ -3,7 +3,8 @@ export interface SharePointFormProps {
     clientId: string,
     monthId: string,
     clientName: string,
-    monthName: string
+    monthName: string,
+    quantidadeDePost: string
   ) => Promise<void>;
   isExecuting: boolean;
 }

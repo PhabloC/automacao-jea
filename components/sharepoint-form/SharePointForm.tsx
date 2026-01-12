@@ -2,9 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  getClients,
-  addClient,
-  removeClient,
   clientNameExists,
   loadClientsFromWebhook,
   createClientInWebhook,
@@ -25,12 +22,14 @@ export default function SharePointForm({
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [quantidadeDePost, setQuantidadeDePost] = useState<string>("");
   const [newClientName, setNewClientName] = useState<string>("");
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [errors, setErrors] = useState<{
     client?: string;
     month?: string;
+    quantidadeDePost?: string;
     newClient?: string;
   }>({});
 
@@ -86,12 +85,17 @@ export default function SharePointForm({
     e.preventDefault();
 
     // Validação
-    const newErrors: { client?: string; month?: string } = {};
+    const newErrors: { client?: string; month?: string; quantidadeDePost?: string } = {};
     if (!selectedClient) {
       newErrors.client = "Por favor, selecione um cliente";
     }
     if (!selectedMonth) {
       newErrors.month = "Por favor, selecione um mês";
+    }
+    if (!quantidadeDePost || quantidadeDePost.trim() === "") {
+      newErrors.quantidadeDePost = "Por favor, informe a quantidade de post";
+    } else if (isNaN(Number(quantidadeDePost)) || Number(quantidadeDePost) <= 0) {
+      newErrors.quantidadeDePost = "A quantidade de post deve ser um número maior que zero";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -104,7 +108,8 @@ export default function SharePointForm({
       selectedClient,
       selectedMonth,
       selectedClientName,
-      selectedMonthName
+      selectedMonthName,
+      quantidadeDePost
     );
   };
 
@@ -428,6 +433,48 @@ export default function SharePointForm({
           )}
         </div>
 
+        {/* Quantidade de Post */}
+        <div className="mb-6">
+          <label
+            htmlFor="quantidade-de-post"
+            className="block text-sm font-medium text-gray-300 mb-2"
+          >
+            Quantidade de Post
+          </label>
+          <input
+            id="quantidade-de-post"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={quantidadeDePost}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Permitir apenas números
+              if (value === "" || /^\d+$/.test(value)) {
+                setQuantidadeDePost(value);
+                setErrors((prev) => ({ ...prev, quantidadeDePost: undefined }));
+              }
+            }}
+            disabled={isExecuting}
+            placeholder="Digite a quantidade de post"
+            className={`
+              w-full px-4 py-3 rounded-lg border bg-gray-800 text-white
+              focus:ring-2 focus:ring-red-900 focus:border-red-900 transition-colors
+              disabled:bg-gray-900 disabled:cursor-not-allowed
+              ${
+                errors.quantidadeDePost
+                  ? "border-red-600"
+                  : "border-red-900/50"
+              }
+            `}
+          />
+          {errors.quantidadeDePost && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              {errors.quantidadeDePost}
+            </p>
+          )}
+        </div>
+
         {/* Preview */}
         {selectedClient && selectedMonth && (
           <div className="mb-6 p-4 bg-red-950/30 rounded-lg border border-red-900/50">
@@ -444,14 +491,14 @@ export default function SharePointForm({
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isExecuting || !selectedClient || !selectedMonth}
+          disabled={isExecuting || !selectedClient || !selectedMonth || !quantidadeDePost}
           className={`
             w-full px-6 py-3 rounded-lg font-medium transition-all duration-200 transform
             flex items-center justify-center gap-2
             ${
-              isExecuting || !selectedClient || !selectedMonth
+              isExecuting || !selectedClient || !selectedMonth || !quantidadeDePost
                 ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-black to-red-950 text-white hover:from-gray-900 hover:to-red-900 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
+                : "bg-linear-to-r from-black to-red-950 text-white hover:from-gray-900 hover:to-red-900 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
             }
           `}
         >

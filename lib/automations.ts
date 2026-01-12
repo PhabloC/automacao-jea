@@ -55,6 +55,7 @@ export async function executeAutomation(
     monthId?: string;
     clientName?: string;
     monthName?: string;
+    quantidadeDePost?: string;
   }
 ): Promise<ExecutionResult> {
   const now = new Date();
@@ -86,6 +87,7 @@ export async function executeAutomation(
           monthId: params.monthId,
           clientName: params.clientName,
           monthName: params.monthName,
+          quantidadeDePost: params.quantidadeDePost,
         }),
       });
 

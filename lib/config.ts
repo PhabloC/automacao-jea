@@ -7,7 +7,6 @@ export const N8N_WEBHOOKS = {
 
 // Configurações da API do n8n para buscar estatísticas
 export const N8N_CONFIG = {
-  // URL base do n8n (ex: https://n8n.example.com ou https://workflow.jeamarketing.com.br)
   baseUrl:
     process.env.NEXT_PUBLIC_N8N_BASE_URL ||
     "https://workflow.jeamarketing.com.br",
