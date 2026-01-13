@@ -10,6 +10,7 @@ export interface AutomationPageProps {
       monthId?: string;
       clientName?: string;
       monthName?: string;
+      quantidadeDePost?: string;
     }
   ) => Promise<void>;
   icon: React.ReactNode;
