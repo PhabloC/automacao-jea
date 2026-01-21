@@ -1,18 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { GoogleIcon, LightningIcon, SpinnerIcon } from "@/svg";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { signInWithGoogle } = useAuth();
+  const router = useRouter();
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    // TODO: Implementar integração com Supabase
-    // Simular delay para demonstração
-    setTimeout(() => {
+    setError(null);
+    
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setError("Erro ao fazer login. Tente novamente.");
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -74,6 +82,13 @@ export default function LoginPage() {
               <p className="text-xs text-gray-500">Acesse sua conta</p>
             </div>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-3 bg-red-950/50 border border-red-900/50 rounded-lg">
+              <p className="text-sm text-red-400 text-center">{error}</p>
+            </div>
+          )}
 
           {/* Divider with text */}
           <div className="relative mb-8">

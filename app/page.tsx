@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/header/Header";
 import Tabs from "@/components/tabs/Tabs";
 import AutomationPage from "@/components/automation-page/AutomationPage";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   createInitialAutomations,
   executeAutomation,
@@ -19,9 +21,12 @@ import {
   CheckIcon,
   CloseIcon,
   InfoIcon,
+  SpinnerIcon,
 } from "@/svg";
 
 export default function Home() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [automations, setAutomations] =
     useState<AutomationData[]>(createInitialAutomations());
   const [executing, setExecuting] = useState<Record<string, boolean>>({});
@@ -32,8 +37,17 @@ export default function Home() {
     type: "success" | "error";
   }>({ show: false, message: "", type: "success" });
 
+  // Redirecionar para login se não estiver autenticado
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
+
   // Carregar estatísticas do n8n ao montar o componente
   useEffect(() => {
+    if (!user) return;
+
     const loadStatistics = async () => {
       const initialAutomations = createInitialAutomations();
       for (const automation of initialAutomations) {
@@ -67,7 +81,7 @@ export default function Home() {
     };
 
     loadStatistics();
-  }, []);
+  }, [user]);
 
   // Calcular estatísticas totais
   const totalExecutions = automations.reduce(
@@ -155,6 +169,23 @@ export default function Home() {
     }
     return <ClickUpIcon className={`${sizeClass} ${colorClass}`} />;
   };
+
+  // Mostrar loading enquanto verifica autenticação
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <SpinnerIcon className="w-10 h-10 text-red-500 animate-spin" />
+          <p className="text-gray-400">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Não renderizar nada enquanto redireciona
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-black">
