@@ -51,12 +51,9 @@ export default function LoginPage() {
         {/* Login Card */}
         <div className="bg-linear-to-b from-gray-900/80 to-gray-950/90 backdrop-blur-xl rounded-2xl border border-red-900/30 shadow-2xl shadow-red-950/20 p-8">
           {/* Card Header */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className="flex items-center justify-center w-12 h-12 bg-linear-to-br from-red-900/50 to-red-950/80 rounded-xl border border-red-800/30">
-              <LightningIcon className="w-6 h-6 text-red-400" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-white">Bem-vindo</h2>
+          <div className="flex items-center  gap-3 mb-8">
+            <div className="text-center w-full">
+              <h2 className="text-2xl font-semibold text-white">Bem-vindo</h2>
               <p className="text-xs text-gray-500">Acesse sua conta</p>
             </div>
           </div>
@@ -105,7 +102,7 @@ export default function LoginPage() {
           </button>
 
           {/* Terms */}
-          <p className="mt-6 text-center text-xs text-gray-600">
+         {/*  <p className="mt-6 text-center text-xs text-gray-600">
             Ao continuar, você concorda com nossos{" "}
             <a href="#" className="text-red-400 hover:text-red-300 transition-colors">
               Termos de Serviço
@@ -114,7 +111,7 @@ export default function LoginPage() {
             <a href="#" className="text-red-400 hover:text-red-300 transition-colors">
               Política de Privacidade
             </a>
-          </p>
+          </p> */}
         </div>
 
         {/* Footer */}
