@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleIcon, LightningIcon, SpinnerIcon } from "@/svg";
 import { useAuth } from "@/contexts/AuthContext";
+import NeuralBackground from "@/components/neural-background/NeuralBackground";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -25,31 +26,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Gradient orbs */}
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-red-900/20 rounded-full blur-[128px] animate-pulse" />
-        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-red-800/15 rounded-full blur-[128px] animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-950/10 rounded-full blur-[200px]" />
-        
-        {/* Grid pattern */}
-        <div 
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(220, 38, 38, 0.3) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(220, 38, 38, 0.3) 1px, transparent 1px)
-            `,
-            backgroundSize: '60px 60px'
-          }}
-        />
-        
-        {/* Floating particles */}
-        <div className="absolute top-20 left-20 w-2 h-2 bg-red-500/30 rounded-full animate-float" />
-        <div className="absolute top-40 right-32 w-1.5 h-1.5 bg-red-400/40 rounded-full animate-float delay-500" />
-        <div className="absolute bottom-32 left-1/4 w-2 h-2 bg-red-600/25 rounded-full animate-float delay-1000" />
-        <div className="absolute bottom-48 right-1/4 w-1 h-1 bg-red-300/35 rounded-full animate-float delay-700" />
-      </div>
+      {/* Neural Vortex Background */}
+      <NeuralBackground />
 
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-md px-6">
@@ -115,7 +93,9 @@ export default function LoginPage() {
               </>
             ) : (
               <>
-                <GoogleIcon className="w-5 h-5" />
+                <span className="animate-google-icon">
+                  <GoogleIcon className="w-5 h-5" />
+                </span>
                 <span>Entrar com Google</span>
               </>
             )}
@@ -147,35 +127,27 @@ export default function LoginPage() {
       </div>
 
       {/* Bottom gradient line */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-red-900/50 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-red-900/50 to-transparent z-10" />
 
       {/* Custom animations */}
       <style jsx>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-          }
-          25% {
-            transform: translateY(-20px) translateX(10px);
+        @keyframes googleIconEntrance {
+          0% {
+            opacity: 0;
+            transform: translateY(20px) rotate(0deg);
           }
           50% {
-            transform: translateY(-10px) translateX(-5px);
+            opacity: 1;
+            transform: translateY(0) rotate(0deg);
           }
-          75% {
-            transform: translateY(-25px) translateX(5px);
+          100% {
+            opacity: 1;
+            transform: translateY(0) rotate(360deg);
           }
         }
-        .animate-float {
-          animation: float 8s ease-in-out infinite;
-        }
-        .delay-500 {
-          animation-delay: 0.5s;
-        }
-        .delay-700 {
-          animation-delay: 0.7s;
-        }
-        .delay-1000 {
-          animation-delay: 1s;
+        .animate-google-icon {
+          display: inline-flex;
+          animation: googleIconEntrance 1.2s ease-out forwards;
         }
       `}</style>
     </div>
