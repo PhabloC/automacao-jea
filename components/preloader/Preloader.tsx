@@ -240,13 +240,36 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
       </div>
 
       {/* Barra de loading */}
-      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-48 h-0.5 bg-gray-800 rounded-full overflow-hidden">
+      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-64 h-2 bg-gray-800/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-700/30">
+        {/* Brilho de fundo animado */}
         <div
-          className="h-full bg-gradient-to-r from-red-700 via-red-500 to-red-700 rounded-full"
+          className="absolute inset-0 bg-linear-to-r from-transparent via-red-500/20 to-transparent"
           style={{
-            animation: "loadingBar 3s ease-in-out forwards",
+            animation: "shimmer 1.5s ease-in-out infinite",
           }}
         />
+        {/* Barra de progresso principal */}
+        <div
+          className="h-full bg-linear-to-r from-red-800 via-red-500 to-red-600 rounded-xl relative"
+          style={{
+            animation: "loadingBar 3s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+          }}
+        >
+          {/* Efeito de brilho na barra */}
+          <div
+            className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent rounded-xl"
+            style={{
+              animation: "loadingShine 1s ease-in-out infinite",
+            }}
+          />
+          {/* Partículas na ponta da barra */}
+          <div
+            className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full blur-sm"
+            style={{
+              animation: "pulse 0.5s ease-in-out infinite",
+            }}
+          />
+        </div>
       </div>
 
       <style jsx>{`
@@ -327,8 +350,43 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
           0% {
             width: 0%;
           }
+          20% {
+            width: 25%;
+          }
+          40% {
+            width: 45%;
+          }
+          60% {
+            width: 70%;
+          }
+          80% {
+            width: 85%;
+          }
           100% {
             width: 100%;
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+
+        @keyframes loadingShine {
+          0% {
+            transform: translateX(-100%) skewX(-15deg);
+            opacity: 0;
+          }
+          50% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateX(200%) skewX(-15deg);
+            opacity: 0;
           }
         }
 
