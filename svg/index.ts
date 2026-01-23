@@ -9,4 +9,8 @@ export { default as InfoIcon } from "./InfoIcon";
 export { default as SpinnerIcon } from "./SpinnerIcon";
 export { default as TrashIcon } from "./TrashIcon";
 export { default as GoogleIcon } from "./GoogleIcon";
+export { default as MenuIcon } from "./MenuIcon";
+export { default as DashboardIcon } from "./DashboardIcon";
+export { default as ChevronLeftIcon } from "./ChevronLeftIcon";
+export { default as ChevronRightIcon } from "./ChevronRightIcon";
 
