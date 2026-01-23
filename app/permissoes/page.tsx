@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/sidebar/Sidebar";
-import ConfirmModal from "@/components/ui/ConfirmModal";
+
+
 import {
   UserIcon,
   SpinnerIcon,
@@ -14,6 +15,7 @@ import {
   TrashIcon,
   ShieldIcon,
 } from "@/svg";
+import ConfirmModal from "@/components/ui/confirm-modal/ConfirmModal";
 
 interface UserData {
   id: string;
