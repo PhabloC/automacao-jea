@@ -140,8 +140,8 @@ export default function PerfilPage() {
                   <Image
                     src={userAvatar}
                     alt={formData.name || "Avatar"}
-                    width={120}
-                    height={120}
+                    width={80}
+                    height={80}
                     className="rounded-full"
                   />
                 ) : (
