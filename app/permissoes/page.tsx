@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/sidebar/Sidebar";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import {
   UserIcon,
   SpinnerIcon,
@@ -26,6 +27,12 @@ interface UserData {
   has_permission: boolean;
 }
 
+interface ModalState {
+  isOpen: boolean;
+  type: "delete" | "grant_editor" | "grant_admin" | null;
+  user: UserData | null;
+}
+
 export default function PermissoesPage() {
   const { user, session, loading: authLoading, isAdmin, isLocalhost } = useAuth();
   const router = useRouter();
@@ -39,6 +46,13 @@ export default function PermissoesPage() {
     message: string;
     type: "success" | "error";
   }>({ show: false, message: "", type: "success" });
+  
+  // Estado do modal
+  const [modal, setModal] = useState<ModalState>({
+    isOpen: false,
+    type: null,
+    user: null,
+  });
 
   // Redirecionar se não for admin
   useEffect(() => {
@@ -115,6 +129,16 @@ export default function PermissoesPage() {
     }, 5000);
   };
 
+  // Abrir modal de confirmação
+  const openModal = (type: "delete" | "grant_editor" | "grant_admin", targetUser: UserData) => {
+    setModal({ isOpen: true, type, user: targetUser });
+  };
+
+  // Fechar modal
+  const closeModal = () => {
+    setModal({ isOpen: false, type: null, user: null });
+  };
+
   // Dar permissão a um usuário
   const handleGrantPermission = async (targetUser: UserData, role: "admin" | "editor") => {
     if (isLocalhost) {
@@ -124,6 +148,7 @@ export default function PermissoesPage() {
           u.id === targetUser.id ? { ...u, role, has_permission: true } : u
         )
       );
+      closeModal();
       return;
     }
 
@@ -160,6 +185,7 @@ export default function PermissoesPage() {
       showNotification("Erro ao conceder permissão", "error");
     } finally {
       setSaving(null);
+      closeModal();
     }
   };
 
@@ -217,10 +243,6 @@ export default function PermissoesPage() {
       return;
     }
 
-    if (!confirm("Tem certeza que deseja remover a permissão deste usuário?")) {
-      return;
-    }
-
     if (isLocalhost) {
       showNotification("Permissão removida (modo desenvolvimento)", "success");
       setUsers((prev) =>
@@ -263,20 +285,14 @@ export default function PermissoesPage() {
   const handleDeleteUser = async (userId: string) => {
     if (userId === user?.id) {
       showNotification("Você não pode excluir sua própria conta", "error");
-      return;
-    }
-
-    if (
-      !confirm(
-        "Tem certeza que deseja EXCLUIR este usuário? Esta ação é irreversível e removerá a conta completamente do sistema."
-      )
-    ) {
+      closeModal();
       return;
     }
 
     if (isLocalhost) {
       showNotification("Usuário excluído (modo desenvolvimento)", "success");
       setUsers((prev) => prev.filter((u) => u.id !== userId));
+      closeModal();
       return;
     }
 
@@ -301,8 +317,61 @@ export default function PermissoesPage() {
       showNotification("Erro ao excluir usuário", "error");
     } finally {
       setSaving(null);
+      closeModal();
     }
   };
+
+  // Handler de confirmação do modal
+  const handleModalConfirm = () => {
+    if (!modal.user) return;
+
+    switch (modal.type) {
+      case "delete":
+        handleDeleteUser(modal.user.id);
+        break;
+      case "grant_editor":
+        handleGrantPermission(modal.user, "editor");
+        break;
+      case "grant_admin":
+        handleGrantPermission(modal.user, "admin");
+        break;
+    }
+  };
+
+  // Configuração do modal baseado no tipo
+  const getModalConfig = () => {
+    if (!modal.user) return { title: "", message: "", confirmText: "", type: "info" as const };
+
+    const userName = modal.user.full_name || modal.user.email;
+
+    switch (modal.type) {
+      case "delete":
+        return {
+          title: "Excluir Usuário",
+          message: `Tem certeza que deseja EXCLUIR o usuário "${userName}"? Esta ação é irreversível e removerá a conta completamente do sistema.`,
+          confirmText: "Excluir Usuário",
+          type: "danger" as const,
+        };
+      case "grant_editor":
+        return {
+          title: "Conceder Acesso de Editor",
+          message: `Você está prestes a conceder acesso de EDITOR para "${userName}". O usuário poderá executar automações do sistema.`,
+          confirmText: "Conceder Acesso",
+          type: "info" as const,
+        };
+      case "grant_admin":
+        return {
+          title: "Conceder Acesso de Administrador",
+          message: `Você está prestes a conceder acesso de ADMINISTRADOR para "${userName}". O usuário terá acesso total ao sistema, incluindo gerenciamento de permissões.`,
+          confirmText: "Conceder Acesso Admin",
+          type: "warning" as const,
+        };
+      default:
+        return { title: "", message: "", confirmText: "", type: "info" as const };
+    }
+  };
+
+  const modalConfig = getModalConfig();
 
   const getRoleBadge = (role: string | null) => {
     if (role === "admin") {
@@ -412,7 +481,7 @@ export default function PermissoesPage() {
           <div className="flex gap-2 mb-6">
             <button
               onClick={() => setActiveTab("with_permission")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
                 activeTab === "with_permission"
                   ? "bg-red-600 text-white"
                   : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
@@ -422,7 +491,7 @@ export default function PermissoesPage() {
             </button>
             <button
               onClick={() => setActiveTab("without_permission")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
                 activeTab === "without_permission"
                   ? "bg-red-600 text-white"
                   : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
@@ -506,7 +575,7 @@ export default function PermissoesPage() {
                             )
                           }
                           disabled={saving === u.id || u.id === user?.id}
-                          className="px-3 py-2 bg-gray-800 border border-red-900/30 rounded-lg text-white text-sm focus:outline-none focus:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-2 bg-gray-800 border border-red-900/30 rounded-lg text-white text-sm focus:outline-none focus:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
                           <option value="admin">Administrador</option>
                           <option value="editor">Editor</option>
@@ -515,7 +584,7 @@ export default function PermissoesPage() {
                         <button
                           onClick={() => handleRemovePermission(u.id)}
                           disabled={saving === u.id || u.id === user?.id}
-                          className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-950/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-950/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                           title="Remover permissão"
                         >
                           {saving === u.id ? (
@@ -526,9 +595,9 @@ export default function PermissoesPage() {
                         </button>
 
                         <button
-                          onClick={() => handleDeleteUser(u.id)}
+                          onClick={() => openModal("delete", u)}
                           disabled={saving === u.id || u.id === user?.id}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-950/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-950/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                           title="Excluir usuário"
                         >
                           <TrashIcon className="w-5 h-5" />
@@ -579,9 +648,9 @@ export default function PermissoesPage() {
                       {getRoleBadge(u.role)}
 
                       <button
-                        onClick={() => handleGrantPermission(u, "editor")}
+                        onClick={() => openModal("grant_editor", u)}
                         disabled={saving === u.id}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed cursor-pointer"
                       >
                         {saving === u.id ? (
                           <SpinnerIcon className="w-4 h-4 animate-spin" />
@@ -591,9 +660,9 @@ export default function PermissoesPage() {
                       </button>
 
                       <button
-                        onClick={() => handleGrantPermission(u, "admin")}
+                        onClick={() => openModal("grant_admin", u)}
                         disabled={saving === u.id}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-600/50 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
+                        className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-600/50 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed cursor-pointer"
                       >
                         {saving === u.id ? (
                           <SpinnerIcon className="w-4 h-4 animate-spin" />
@@ -603,9 +672,9 @@ export default function PermissoesPage() {
                       </button>
 
                       <button
-                        onClick={() => handleDeleteUser(u.id)}
+                        onClick={() => openModal("delete", u)}
                         disabled={saving === u.id}
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-950/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-950/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         title="Excluir usuário"
                       >
                         <TrashIcon className="w-5 h-5" />
@@ -618,6 +687,19 @@ export default function PermissoesPage() {
           </div>
         </div>
       </main>
+
+      {/* Modal de Confirmação */}
+      <ConfirmModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        onConfirm={handleModalConfirm}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        cancelText="Cancelar"
+        type={modalConfig.type}
+        loading={saving === modal.user?.id}
+      />
 
       {/* Notification Toast */}
       {notification.show && (
