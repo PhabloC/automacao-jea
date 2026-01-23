@@ -13,6 +13,7 @@ import {
   UserIcon,
   LogoutIcon,
   EditIcon,
+  ShieldIcon,
 } from "@/svg";
 import { automationDefinitions } from "@/lib/automations";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,7 +25,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, signOut, isLocalhost } = useAuth();
+  const { user, signOut, isLocalhost, isAdmin } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Fechar menu ao clicar fora
@@ -85,9 +86,9 @@ export default function Sidebar({ className = "" }: SidebarProps) {
       <div className="flex items-center justify-center p-4 border-b border-red-900/30">
         {isOpen ? (
           <Image
-            src="/logo - Copia.png"
+            src="/logo.png"
             alt="Logo J&A"
-            width={150}
+            width={120}
             height={40}
             className="object-contain"
           />
@@ -152,6 +153,32 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           </Link>
         ))}
       </nav>
+
+      {/* Admin Section - Only for admins */}
+      {isAdmin && (
+        <div className="px-4 pb-2">
+          {isOpen && (
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3">
+              Administração
+            </span>
+          )}
+          {!isOpen && <div className="border-t border-red-900/30 mb-2" />}
+          <Link
+            href="/permissoes"
+            className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group mt-2 ${
+              isActive("/permissoes")
+                ? "bg-red-600 text-white"
+                : "text-gray-400 hover:bg-red-950/50 hover:text-white"
+            }`}
+            title={!isOpen ? "Controle de Permissões" : undefined}
+          >
+            <ShieldIcon className="w-5 h-5 shrink-0" />
+            {isOpen && (
+              <span className="font-medium whitespace-nowrap">Permissões</span>
+            )}
+          </Link>
+        </div>
+      )}
 
       {/* User Section */}
       <div className="p-4 border-t border-red-900/30 relative" ref={menuRef}>

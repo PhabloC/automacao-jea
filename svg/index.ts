@@ -16,4 +16,6 @@ export { default as ChevronRightIcon } from "./ChevronRightIcon";
 export { default as UserIcon } from "./UserIcon";
 export { default as LogoutIcon } from "./LogoutIcon";
 export { default as EditIcon } from "./EditIcon";
+export { default as SettingsIcon } from "./SettingsIcon";
+export { default as ShieldIcon } from "./ShieldIcon";
 
