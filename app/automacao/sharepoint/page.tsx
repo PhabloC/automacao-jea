@@ -14,7 +14,7 @@ import {
 } from "@/lib/automations";
 
 export default function SharePointAutomationPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, hasPermission } = useAuth();
   const router = useRouter();
   const [automation, setAutomation] = useState<AutomationData | null>(null);
   const [executing, setExecuting] = useState(false);
@@ -24,12 +24,14 @@ export default function SharePointAutomationPage() {
     type: "success" | "error";
   }>({ show: false, message: "", type: "success" });
 
-  // Redirecionar para login se não estiver autenticado
+  // Redirecionar para login ou dashboard se não tiver permissão
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
+    } else if (!authLoading && !hasPermission) {
+      router.push("/dashboard");
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, hasPermission, router]);
 
   // Carregar dados da automação
   useEffect(() => {
@@ -132,7 +134,7 @@ export default function SharePointAutomationPage() {
   }
 
   // Não renderizar nada enquanto redireciona
-  if (!user || !automation) {
+  if (!user || !hasPermission || !automation) {
     return null;
   }
 

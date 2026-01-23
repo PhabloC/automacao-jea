@@ -14,24 +14,26 @@ import {
   ShieldIcon,
 } from "@/svg";
 
-interface UserPermission {
+interface UserData {
   id: string;
-  user_id: string;
   email: string;
   full_name: string | null;
   avatar_url: string | null;
-  role: "admin" | "editor";
+  provider: string;
   created_at: string;
-  updated_at: string;
+  last_sign_in_at: string | null;
+  role: "admin" | "editor" | null;
+  has_permission: boolean;
 }
 
 export default function PermissoesPage() {
   const { user, session, loading: authLoading, isAdmin, isLocalhost } = useAuth();
   const router = useRouter();
 
-  const [permissions, setPermissions] = useState<UserPermission[]>([]);
+  const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"with_permission" | "without_permission">("with_permission");
   const [notification, setNotification] = useState<{
     show: boolean;
     message: string;
@@ -47,52 +49,63 @@ export default function PermissoesPage() {
     }
   }, [user, authLoading, isAdmin, router]);
 
-  // Carregar permissões
+  // Carregar usuários
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      // Em localhost, usar dados simulados
+      if (isLocalhost) {
+        setUsers([
+          {
+            id: "dev-user-localhost",
+            email: "dev@localhost.com",
+            full_name: "Desenvolvedor Local",
+            avatar_url: null,
+            provider: "google",
+            created_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+            role: "admin",
+            has_permission: true,
+          },
+          {
+            id: "user-sem-permissao",
+            email: "novo@usuario.com",
+            full_name: "Novo Usuário",
+            avatar_url: null,
+            provider: "google",
+            created_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+            role: null,
+            has_permission: false,
+          },
+        ]);
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch("/api/users", {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || []);
+      } else {
+        showNotification("Erro ao carregar usuários", "error");
+      }
+    } catch (error) {
+      console.error("Erro ao carregar usuários:", error);
+      showNotification("Erro ao carregar usuários", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!user || !isAdmin) return;
-
-    const loadPermissions = async () => {
-      setLoading(true);
-      try {
-        // Em localhost, usar dados simulados
-        if (isLocalhost) {
-          setPermissions([
-            {
-              id: "1",
-              user_id: "dev-user-localhost",
-              email: "dev@localhost.com",
-              full_name: "Desenvolvedor Local",
-              avatar_url: null,
-              role: "admin",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          ]);
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch("/api/permissions", {
-          headers: {
-            Authorization: `Bearer ${session?.access_token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setPermissions(data.permissions || []);
-        } else {
-          showNotification("Erro ao carregar permissões", "error");
-        }
-      } catch (error) {
-        console.error("Erro ao carregar permissões:", error);
-        showNotification("Erro ao carregar permissões", "error");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPermissions();
+    loadUsers();
   }, [user, isAdmin, session, isLocalhost]);
 
   const showNotification = (message: string, type: "success" | "error") => {
@@ -102,20 +115,69 @@ export default function PermissoesPage() {
     }, 5000);
   };
 
-  const handleRoleChange = async (userId: string, newRole: "admin" | "editor") => {
+  // Dar permissão a um usuário
+  const handleGrantPermission = async (targetUser: UserData, role: "admin" | "editor") => {
     if (isLocalhost) {
-      showNotification("Alteração simulada (modo desenvolvimento)", "success");
-      setPermissions((prev) =>
-        prev.map((p) => (p.user_id === userId ? { ...p, role: newRole } : p))
+      showNotification("Permissão concedida (modo desenvolvimento)", "success");
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === targetUser.id ? { ...u, role, has_permission: true } : u
+        )
+      );
+      return;
+    }
+
+    setSaving(targetUser.id);
+    try {
+      const response = await fetch("/api/permissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          user_id: targetUser.id,
+          email: targetUser.email,
+          full_name: targetUser.full_name,
+          avatar_url: targetUser.avatar_url,
+          role,
+        }),
+      });
+
+      if (response.ok) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === targetUser.id ? { ...u, role, has_permission: true } : u
+          )
+        );
+        showNotification("Permissão concedida com sucesso!", "success");
+      } else {
+        const data = await response.json();
+        showNotification(data.error || "Erro ao conceder permissão", "error");
+      }
+    } catch (error) {
+      console.error("Erro ao conceder permissão:", error);
+      showNotification("Erro ao conceder permissão", "error");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  // Alterar role de um usuário
+  const handleRoleChange = async (userId: string, newRole: "admin" | "editor") => {
+    const targetUser = users.find((u) => u.id === userId);
+    if (!targetUser) return;
+
+    if (isLocalhost) {
+      showNotification("Permissão alterada (modo desenvolvimento)", "success");
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
       );
       return;
     }
 
     setSaving(userId);
     try {
-      const permission = permissions.find((p) => p.user_id === userId);
-      if (!permission) return;
-
       const response = await fetch("/api/permissions", {
         method: "POST",
         headers: {
@@ -124,16 +186,16 @@ export default function PermissoesPage() {
         },
         body: JSON.stringify({
           user_id: userId,
-          email: permission.email,
-          full_name: permission.full_name,
-          avatar_url: permission.avatar_url,
+          email: targetUser.email,
+          full_name: targetUser.full_name,
+          avatar_url: targetUser.avatar_url,
           role: newRole,
         }),
       });
 
       if (response.ok) {
-        setPermissions((prev) =>
-          prev.map((p) => (p.user_id === userId ? { ...p, role: newRole } : p))
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
         );
         showNotification("Permissão atualizada com sucesso!", "success");
       } else {
@@ -148,6 +210,7 @@ export default function PermissoesPage() {
     }
   };
 
+  // Remover permissão de um usuário
   const handleRemovePermission = async (userId: string) => {
     if (userId === user?.id) {
       showNotification("Você não pode remover sua própria permissão", "error");
@@ -159,8 +222,12 @@ export default function PermissoesPage() {
     }
 
     if (isLocalhost) {
-      showNotification("Remoção simulada (modo desenvolvimento)", "success");
-      setPermissions((prev) => prev.filter((p) => p.user_id !== userId));
+      showNotification("Permissão removida (modo desenvolvimento)", "success");
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId ? { ...u, role: null, has_permission: false } : u
+        )
+      );
       return;
     }
 
@@ -174,7 +241,11 @@ export default function PermissoesPage() {
       });
 
       if (response.ok) {
-        setPermissions((prev) => prev.filter((p) => p.user_id !== userId));
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === userId ? { ...u, role: null, has_permission: false } : u
+          )
+        );
         showNotification("Permissão removida com sucesso!", "success");
       } else {
         const data = await response.json();
@@ -188,7 +259,52 @@ export default function PermissoesPage() {
     }
   };
 
-  const getRoleBadge = (role: string) => {
+  // Excluir usuário completamente
+  const handleDeleteUser = async (userId: string) => {
+    if (userId === user?.id) {
+      showNotification("Você não pode excluir sua própria conta", "error");
+      return;
+    }
+
+    if (
+      !confirm(
+        "Tem certeza que deseja EXCLUIR este usuário? Esta ação é irreversível e removerá a conta completamente do sistema."
+      )
+    ) {
+      return;
+    }
+
+    if (isLocalhost) {
+      showNotification("Usuário excluído (modo desenvolvimento)", "success");
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      return;
+    }
+
+    setSaving(userId);
+    try {
+      const response = await fetch(`/api/users?user_id=${userId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        setUsers((prev) => prev.filter((u) => u.id !== userId));
+        showNotification("Usuário excluído com sucesso!", "success");
+      } else {
+        const data = await response.json();
+        showNotification(data.error || "Erro ao excluir usuário", "error");
+      }
+    } catch (error) {
+      console.error("Erro ao excluir usuário:", error);
+      showNotification("Erro ao excluir usuário", "error");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const getRoleBadge = (role: string | null) => {
     if (role === "admin") {
       return (
         <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-900/50 text-red-400 border border-red-800">
@@ -196,12 +312,34 @@ export default function PermissoesPage() {
         </span>
       );
     }
+    if (role === "editor") {
+      return (
+        <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-900/50 text-blue-400 border border-blue-800">
+          Editor
+        </span>
+      );
+    }
     return (
-      <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-900/50 text-blue-400 border border-blue-800">
-        Editor
+      <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-900/50 text-yellow-400 border border-yellow-800">
+        Sem permissão
       </span>
     );
   };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Nunca";
+    return new Date(dateString).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Filtrar usuários por aba
+  const usersWithPermission = users.filter((u) => u.has_permission);
+  const usersWithoutPermission = users.filter((u) => !u.has_permission);
 
   // Mostrar loading enquanto verifica autenticação
   if (authLoading) {
@@ -270,14 +408,47 @@ export default function PermissoesPage() {
             </div>
           </div>
 
+          {/* Tabs */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setActiveTab("with_permission")}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === "with_permission"
+                  ? "bg-red-600 text-white"
+                  : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+              }`}
+            >
+              Com Permissão ({usersWithPermission.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("without_permission")}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === "without_permission"
+                  ? "bg-red-600 text-white"
+                  : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+              }`}
+            >
+              Pendentes ({usersWithoutPermission.length})
+              {usersWithoutPermission.length > 0 && (
+                <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-600 text-white rounded-full">
+                  Novo
+                </span>
+              )}
+            </button>
+          </div>
+
           {/* Users List */}
           <div className="bg-gray-900/50 border border-red-900/30 rounded-xl overflow-hidden">
             <div className="p-6 border-b border-red-900/30">
               <h3 className="text-lg font-medium text-white">
-                Usuários com Permissão
+                {activeTab === "with_permission"
+                  ? "Usuários com Permissão"
+                  : "Usuários Aguardando Permissão"}
               </h3>
               <p className="text-sm text-gray-400 mt-1">
-                {permissions.length} usuário(s) com acesso ao sistema
+                {activeTab === "with_permission"
+                  ? `${usersWithPermission.length} usuário(s) com acesso ao sistema`
+                  : `${usersWithoutPermission.length} usuário(s) aguardando liberação`}
               </p>
             </div>
 
@@ -285,102 +456,165 @@ export default function PermissoesPage() {
               <div className="flex items-center justify-center py-12">
                 <SpinnerIcon className="w-8 h-8 text-red-500 animate-spin" />
               </div>
-            ) : permissions.length === 0 ? (
+            ) : activeTab === "with_permission" ? (
+              usersWithPermission.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                  <UserIcon className="w-12 h-12 mb-4" />
+                  <p>Nenhum usuário com permissão encontrado</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-red-900/30">
+                  {usersWithPermission.map((u) => (
+                    <div
+                      key={u.id}
+                      className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-center gap-4">
+                        {u.avatar_url ? (
+                          <Image
+                            src={u.avatar_url}
+                            alt={u.full_name || u.email}
+                            width={48}
+                            height={48}
+                            className="rounded-full"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
+                            <UserIcon className="w-6 h-6 text-white" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-white">
+                            {u.full_name || "Sem nome"}
+                          </p>
+                          <p className="text-sm text-gray-400">{u.email}</p>
+                          <p className="text-xs text-gray-500">
+                            Último acesso: {formatDate(u.last_sign_in_at)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {getRoleBadge(u.role)}
+
+                        <select
+                          value={u.role || "editor"}
+                          onChange={(e) =>
+                            handleRoleChange(
+                              u.id,
+                              e.target.value as "admin" | "editor"
+                            )
+                          }
+                          disabled={saving === u.id || u.id === user?.id}
+                          className="px-3 py-2 bg-gray-800 border border-red-900/30 rounded-lg text-white text-sm focus:outline-none focus:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <option value="admin">Administrador</option>
+                          <option value="editor">Editor</option>
+                        </select>
+
+                        <button
+                          onClick={() => handleRemovePermission(u.id)}
+                          disabled={saving === u.id || u.id === user?.id}
+                          className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-950/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Remover permissão"
+                        >
+                          {saving === u.id ? (
+                            <SpinnerIcon className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <CloseIcon className="w-5 h-5" />
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteUser(u.id)}
+                          disabled={saving === u.id || u.id === user?.id}
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-950/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Excluir usuário"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : usersWithoutPermission.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                <UserIcon className="w-12 h-12 mb-4" />
-                <p>Nenhum usuário com permissão encontrado</p>
+                <CheckIcon className="w-12 h-12 mb-4 text-green-500" />
+                <p>Nenhum usuário aguardando permissão</p>
               </div>
             ) : (
               <div className="divide-y divide-red-900/30">
-                {permissions.map((permission) => (
+                {usersWithoutPermission.map((u) => (
                   <div
-                    key={permission.id}
-                    className="p-6 flex items-center justify-between gap-4"
+                    key={u.id}
+                    className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
                     <div className="flex items-center gap-4">
-                      {/* Avatar */}
-                      {permission.avatar_url ? (
+                      {u.avatar_url ? (
                         <Image
-                          src={permission.avatar_url}
-                          alt={permission.full_name || permission.email}
+                          src={u.avatar_url}
+                          alt={u.full_name || u.email}
                           width={48}
                           height={48}
                           className="rounded-full"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-yellow-600 flex items-center justify-center">
                           <UserIcon className="w-6 h-6 text-white" />
                         </div>
                       )}
-
-                      {/* User Info */}
                       <div>
                         <p className="font-medium text-white">
-                          {permission.full_name || "Sem nome"}
+                          {u.full_name || "Sem nome"}
                         </p>
-                        <p className="text-sm text-gray-400">
-                          {permission.email}
+                        <p className="text-sm text-gray-400">{u.email}</p>
+                        <p className="text-xs text-gray-500">
+                          Cadastrado em: {formatDate(u.created_at)}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                      {/* Role Badge */}
-                      {getRoleBadge(permission.role)}
+                    <div className="flex items-center gap-3">
+                      {getRoleBadge(u.role)}
 
-                      {/* Role Selector */}
-                      <select
-                        value={permission.role}
-                        onChange={(e) =>
-                          handleRoleChange(
-                            permission.user_id,
-                            e.target.value as "admin" | "editor"
-                          )
-                        }
-                        disabled={
-                          saving === permission.user_id ||
-                          permission.user_id === user?.id
-                        }
-                        className="px-3 py-2 bg-gray-800 border border-red-900/30 rounded-lg text-white text-sm focus:outline-none focus:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="admin">Administrador</option>
-                        <option value="editor">Editor</option>
-                      </select>
-
-                      {/* Delete Button */}
                       <button
-                        onClick={() => handleRemovePermission(permission.user_id)}
-                        disabled={
-                          saving === permission.user_id ||
-                          permission.user_id === user?.id
-                        }
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-950/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={
-                          permission.user_id === user?.id
-                            ? "Você não pode remover sua própria permissão"
-                            : "Remover permissão"
-                        }
+                        onClick={() => handleGrantPermission(u, "editor")}
+                        disabled={saving === u.id}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
                       >
-                        {saving === permission.user_id ? (
-                          <SpinnerIcon className="w-5 h-5 animate-spin" />
+                        {saving === u.id ? (
+                          <SpinnerIcon className="w-4 h-4 animate-spin" />
                         ) : (
-                          <TrashIcon className="w-5 h-5" />
+                          "Dar acesso Editor"
                         )}
+                      </button>
+
+                      <button
+                        onClick={() => handleGrantPermission(u, "admin")}
+                        disabled={saving === u.id}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-600/50 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
+                      >
+                        {saving === u.id ? (
+                          <SpinnerIcon className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Dar acesso Admin"
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteUser(u.id)}
+                        disabled={saving === u.id}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-950/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Excluir usuário"
+                      >
+                        <TrashIcon className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Note */}
-          <div className="mt-6 p-4 bg-yellow-950/30 border border-yellow-900/30 rounded-lg">
-            <p className="text-sm text-yellow-400">
-              <strong>Nota:</strong> Novos usuários que fizerem login com Google
-              precisam ter suas permissões adicionadas manualmente por um
-              administrador no Supabase ou através desta interface.
-            </p>
           </div>
         </div>
       </main>
