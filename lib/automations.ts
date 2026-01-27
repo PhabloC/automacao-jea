@@ -34,6 +34,12 @@ export const automationDefinitions: Omit<
     description:
       "Automação para criar tarefas no ClickUp de forma automatizada, organizando projetos e atribuindo responsáveis.",
   },
+  {
+    id: "calendario",
+    title: "Calendário",
+    description:
+      "Automação para criar tarefas de posts no calendário, organizando conteúdo por cliente e mês.",
+  },
 ];
 
 // Função para criar automações com valores iniciais zerados
@@ -47,6 +53,15 @@ export function createInitialAutomations(): AutomationData[] {
   }));
 }
 
+// Interface para posts do calendário
+export interface CalendarPost {
+  id: string;
+  titulo: string;
+  formato: string;
+  descricao: string;
+  referencia: string;
+}
+
 // Executa uma automação
 export async function executeAutomation(
   automationId: string,
@@ -56,6 +71,7 @@ export async function executeAutomation(
     clientName?: string;
     monthName?: string;
     quantidadeDePost?: string;
+    posts?: CalendarPost[];
   }
 ): Promise<ExecutionResult> {
   const now = new Date();
@@ -184,6 +200,71 @@ export async function executeAutomation(
       return {
         success: false,
         message: `Erro ao conectar com o servidor. Não foi possível criar tarefas no ClickUp para ${clientName}.`,
+        timestamp: `Hoje às ${timeString}`,
+      };
+    }
+  }
+
+  // Para Calendário, faz chamada real ao webhook do n8n
+  if (automationId === "calendario" && params?.clientId && params?.monthId && params?.posts) {
+    const webhookUrl = N8N_WEBHOOKS.calendario;
+
+    if (!webhookUrl) {
+      return {
+        success: false,
+        message: "Webhook não configurado para esta automação",
+        timestamp: `Hoje às ${timeString}`,
+      };
+    }
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clientId: params.clientId,
+          monthId: params.monthId,
+          clientName: params.clientName,
+          monthName: params.monthName,
+          posts: params.posts,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const clientName = params.clientName || "o cliente selecionado";
+        const monthName = params.monthName || "o mês selecionado";
+        return {
+          success: false,
+          message: `Erro ao criar tarefas no calendário para ${clientName} - ${monthName}. Status: ${response.status}`,
+          timestamp: `Hoje às ${timeString}`,
+        };
+      }
+
+      const success = data?.success !== false;
+      const postsCount = params.posts.length;
+      const message =
+        data?.message ||
+        (success
+          ? `${postsCount} tarefa${postsCount > 1 ? "s" : ""} criada${postsCount > 1 ? "s" : ""} com sucesso no calendário para ${params.clientName} - ${params.monthName}!`
+          : `Erro ao criar tarefas no calendário para ${params.clientName} - ${params.monthName}. Tente novamente.`);
+
+      return {
+        success,
+        message,
+        timestamp: `Hoje às ${timeString}`,
+      };
+    } catch (error) {
+      const clientName = params.clientName || "o cliente selecionado";
+      const monthName = params.monthName || "o mês selecionado";
+      console.error("Erro ao chamar webhook:", error);
+
+      return {
+        success: false,
+        message: `Erro ao conectar com o servidor. Não foi possível criar tarefas no calendário para ${clientName} - ${monthName}.`,
         timestamp: `Hoje às ${timeString}`,
       };
     }

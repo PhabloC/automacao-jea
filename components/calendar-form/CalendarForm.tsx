@@ -1,34 +1,32 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
-  loadClientsFromWebhook,
-  type Client,
-} from "@/lib/clients";
-import { SpinnerIcon } from "@/svg";
-import { SharePointFormProps } from "./types";
+import { loadClientsFromWebhook, type Client } from "@/lib/clients";
+import { SpinnerIcon, TrashIcon } from "@/svg";
 import { MONTHS } from "@/lib/constants";
+import { CalendarFormProps, Post } from "./types";
+import PostModal from "./PostModal";
 
-export default function SharePointForm({
+export default function CalendarForm({
   onExecute,
   isExecuting,
-}: SharePointFormProps) {
+}: CalendarFormProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<string>("");
-  const [quantidadeDePost, setQuantidadeDePost] = useState<string>("");
+  const [posts, setPosts] = useState<Post[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [isPostModalOpen, setIsPostModalOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [errors, setErrors] = useState<{
     client?: string;
     month?: string;
-    quantidadeDePost?: string;
+    posts?: string;
   }>({});
 
   // Carregar clientes ao montar o componente
   useEffect(() => {
     const loadClients = async () => {
-      // Primeiro carrega do webhook
       const webhookClients = await loadClientsFromWebhook("sharepoint");
       setClients(webhookClients);
     };
@@ -56,17 +54,15 @@ export default function SharePointForm({
     e.preventDefault();
 
     // Validação
-    const newErrors: { client?: string; month?: string; quantidadeDePost?: string } = {};
+    const newErrors: { client?: string; month?: string; posts?: string } = {};
     if (!selectedClient) {
       newErrors.client = "Por favor, selecione um cliente";
     }
     if (!selectedMonth) {
       newErrors.month = "Por favor, selecione um mês";
     }
-    if (!quantidadeDePost || quantidadeDePost.trim() === "") {
-      newErrors.quantidadeDePost = "Por favor, informe a quantidade de post";
-    } else if (isNaN(Number(quantidadeDePost)) || Number(quantidadeDePost) <= 0) {
-      newErrors.quantidadeDePost = "A quantidade de post deve ser um número maior que zero";
+    if (posts.length === 0) {
+      newErrors.posts = "Por favor, adicione pelo menos um post";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -80,8 +76,17 @@ export default function SharePointForm({
       selectedMonth,
       selectedClientName,
       selectedMonthName,
-      quantidadeDePost
+      posts
     );
+  };
+
+  const handleSavePosts = (newPosts: Post[]) => {
+    setPosts(newPosts);
+    setErrors((prev) => ({ ...prev, posts: undefined }));
+  };
+
+  const handleRemovePost = (postId: string) => {
+    setPosts(posts.filter((p) => p.id !== postId));
   };
 
   const selectedClientName =
@@ -98,7 +103,7 @@ export default function SharePointForm({
             htmlFor="client"
             className="block text-sm font-medium text-gray-300 mb-2"
           >
-            Qual cliente gostaria de criar as pastas?
+            Selecione o Cliente
           </label>
           <div className="relative" ref={dropdownRef}>
             <button
@@ -171,7 +176,7 @@ export default function SharePointForm({
             htmlFor="month"
             className="block text-sm font-medium text-gray-300 mb-2"
           >
-            Para qual mês irá criar a pasta?
+            Selecione o Mês
           </label>
           <select
             id="month"
@@ -182,14 +187,10 @@ export default function SharePointForm({
             }}
             disabled={isExecuting}
             className={`
-              w-full px-4 py-3 rounded-lg border bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-              focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors
-              disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed
-              ${
-                errors.month
-                  ? "border-red-500"
-                  : "border-gray-300 dark:border-gray-600"
-              }
+              w-full px-4 py-3 rounded-lg border bg-gray-800 text-white
+              focus:ring-2 focus:ring-red-900 focus:border-red-900 transition-colors
+              disabled:bg-gray-900 disabled:cursor-not-allowed
+              ${errors.month ? "border-red-600" : "border-red-900/50"}
             `}
           >
             <option value="">Selecione um mês</option>
@@ -206,57 +207,102 @@ export default function SharePointForm({
           )}
         </div>
 
-        {/* Quantidade de Post */}
+        {/* Posts Section */}
         <div className="mb-6">
-          <label
-            htmlFor="quantidade-de-post"
-            className="block text-sm font-medium text-gray-300 mb-2"
-          >
-            Quantidade de Post
-          </label>
-          <input
-            id="quantidade-de-post"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={quantidadeDePost}
-            onChange={(e) => {
-              const value = e.target.value;
-              // Permitir apenas números
-              if (value === "" || /^\d+$/.test(value)) {
-                setQuantidadeDePost(value);
-                setErrors((prev) => ({ ...prev, quantidadeDePost: undefined }));
-              }
-            }}
-            disabled={isExecuting}
-            placeholder="Digite a quantidade de post"
-            className={`
-              w-full px-4 py-3 rounded-lg border bg-gray-800 text-white
-              focus:ring-2 focus:ring-red-900 focus:border-red-900 transition-colors
-              disabled:bg-gray-900 disabled:cursor-not-allowed
-              ${
-                errors.quantidadeDePost
-                  ? "border-red-600"
-                  : "border-red-900/50"
-              }
-            `}
-          />
-          {errors.quantidadeDePost && (
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-300">
+              Posts ({posts.length})
+            </label>
+            <button
+              type="button"
+              onClick={() => setIsPostModalOpen(true)}
+              disabled={isExecuting}
+              className="px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded-lg transition-colors font-medium text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Adicionar Posts
+            </button>
+          </div>
+
+          {/* Lista de Posts */}
+          {posts.length > 0 ? (
+            <div className="space-y-3">
+              {posts.map((post, index) => (
+                <div
+                  key={post.id}
+                  className="flex items-start justify-between p-4 bg-gray-800/50 rounded-lg border border-red-900/20"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-medium text-red-400">
+                        Post {index + 1}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 bg-red-900/30 text-red-300 rounded">
+                        {post.formato}
+                      </span>
+                    </div>
+                    <p className="text-white font-medium">{post.titulo}</p>
+                    {post.descricao && (
+                      <p className="text-gray-400 text-sm mt-1 line-clamp-2">
+                        {post.descricao}
+                      </p>
+                    )}
+                    {post.referencia && (
+                      <p className="text-gray-500 text-xs mt-1 truncate">
+                        Ref: {post.referencia}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePost(post.id)}
+                    className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition-colors ml-2"
+                    title="Remover post"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-gray-800/30 rounded-lg border border-dashed border-red-900/30">
+              <p className="text-gray-400 text-sm">
+                Nenhum post adicionado ainda.
+              </p>
+              <p className="text-gray-500 text-xs mt-1">
+                Clique em "Adicionar Posts" para começar.
+              </p>
+            </div>
+          )}
+          {errors.posts && (
             <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-              {errors.quantidadeDePost}
+              {errors.posts}
             </p>
           )}
         </div>
 
         {/* Preview */}
-        {selectedClient && selectedMonth && (
+        {selectedClient && selectedMonth && posts.length > 0 && (
           <div className="mb-6 p-4 bg-red-950/30 rounded-lg border border-red-900/50">
             <p className="text-sm font-medium text-red-300 mb-1">
               Resumo da execução:
             </p>
             <p className="text-sm text-red-200">
-              Criar pasta para o cliente <strong>{selectedClientName}</strong>{" "}
-              no mês de <strong>{selectedMonthName}</strong>
+              Criar {posts.length} tarefa{posts.length > 1 ? "s" : ""} no
+              calendário para o cliente <strong>{selectedClientName}</strong> no
+              mês de <strong>{selectedMonthName}</strong>
             </p>
           </div>
         )}
@@ -264,12 +310,20 @@ export default function SharePointForm({
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isExecuting || !selectedClient || !selectedMonth || !quantidadeDePost}
+          disabled={
+            isExecuting ||
+            !selectedClient ||
+            !selectedMonth ||
+            posts.length === 0
+          }
           className={`
             w-full px-6 py-3 rounded-lg font-medium transition-all duration-200 transform
             flex items-center justify-center gap-2
             ${
-              isExecuting || !selectedClient || !selectedMonth || !quantidadeDePost
+              isExecuting ||
+              !selectedClient ||
+              !selectedMonth ||
+              posts.length === 0
                 ? "bg-gray-700 text-gray-400 cursor-not-allowed"
                 : "bg-linear-to-r from-black to-red-950 text-white hover:from-gray-900 hover:to-red-900 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
             }
@@ -278,13 +332,21 @@ export default function SharePointForm({
           {isExecuting ? (
             <>
               <SpinnerIcon className="h-5 w-5" />
-              Executando...
+              Criando Tarefas...
             </>
           ) : (
-            "Executar Automação"
+            "Criar Tarefas"
           )}
         </button>
       </div>
+
+      {/* Post Modal */}
+      <PostModal
+        isOpen={isPostModalOpen}
+        onClose={() => setIsPostModalOpen(false)}
+        onSave={handleSavePosts}
+        initialPosts={posts}
+      />
     </form>
   );
 }

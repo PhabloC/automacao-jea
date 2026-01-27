@@ -14,6 +14,8 @@ import {
   LogoutIcon,
   EditIcon,
   ShieldIcon,
+  UsersIcon,
+  CalendarIcon,
 } from "@/svg";
 import { automationDefinitions } from "@/lib/automations";
 import { useAuth } from "@/contexts/AuthContext";
@@ -57,6 +59,9 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const getAutomationIcon = (id: string) => {
     if (id === "sharepoint") {
       return <SharePointIcon className="w-5 h-5" />;
+    }
+    if (id === "calendario") {
+      return <CalendarIcon className="w-5 h-5" />;
     }
     return <ClickUpIcon className="w-5 h-5" />;
   };
@@ -117,6 +122,22 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <DashboardIcon className="w-5 h-5 shrink-0" />
           {isOpen && (
             <span className="font-medium whitespace-nowrap">Dashboard</span>
+          )}
+        </Link>
+
+        {/* Clientes Link */}
+        <Link
+          href="/dashboard/clientes"
+          className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group ${
+            isActive("/dashboard/clientes")
+              ? "bg-red-600 text-white"
+              : "text-gray-400 hover:bg-red-950/50 hover:text-white"
+          }`}
+          title={!isOpen ? "Clientes" : undefined}
+        >
+          <UsersIcon className="w-5 h-5 shrink-0" />
+          {isOpen && (
+            <span className="font-medium whitespace-nowrap">Clientes</span>
           )}
         </Link>
 

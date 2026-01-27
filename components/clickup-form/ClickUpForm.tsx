@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { getClients, addClient, removeClient, clientNameExists, loadClientsFromWebhook, createClientInWebhook, deleteClientInWebhook, type Client } from "@/lib/clients";
-import { SpinnerIcon, TrashIcon } from "@/svg";
-import AlertModal, { type AlertModalType } from "@/components/alert-modal/AlertModal";
+import { loadClientsFromWebhook, type Client } from "@/lib/clients";
+import { SpinnerIcon } from "@/svg";
 
 interface ClickUpFormProps {
   onExecute: (clientId: string, clientName: string) => Promise<void>;
@@ -16,34 +15,11 @@ export default function ClickUpForm({
 }: ClickUpFormProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<string>("");
-  const [newClientName, setNewClientName] = useState<string>("");
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [errors, setErrors] = useState<{
     client?: string;
-    newClient?: string;
   }>({});
-  
-  // Estados do modal
-  const [modalState, setModalState] = useState<{
-    isOpen: boolean;
-    type: AlertModalType;
-    title: string;
-    message: string;
-    onConfirm?: () => void;
-  }>({
-    isOpen: false,
-    type: "confirm",
-    title: "",
-    message: "",
-  });
-  
-  // Estado para armazenar dados temporários (ex: cliente a ser excluído)
-  const [pendingAction, setPendingAction] = useState<{
-    type: "delete" | "create";
-    clientId?: string;
-    clientName?: string;
-  } | null>(null);
 
   // Carregar clientes ao montar o componente
   useEffect(() => {
@@ -87,193 +63,12 @@ export default function ClickUpForm({
     await onExecute(selectedClient, selectedClientName);
   };
 
-  const handleAddClient = async (e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
-    
-    if (!newClientName.trim()) {
-      setErrors((prev) => ({ ...prev, newClient: "Por favor, insira um nome para o cliente" }));
-      return;
-    }
-
-    if (clientNameExists("clickup", newClientName)) {
-      setErrors((prev) => ({ ...prev, newClient: "Este cliente já existe" }));
-      return;
-    }
-
-    // Mostrar modal de confirmação antes de criar
-    const trimmedName = newClientName.trim();
-    setPendingAction({ type: "create", clientName: trimmedName });
-    setModalState({
-      isOpen: true,
-      type: "confirm",
-      title: "Confirmar Criação de Cliente",
-      message: `Deseja criar o cliente "${trimmedName}"?`,
-      onConfirm: async () => {
-        await executeCreateClient(trimmedName);
-      },
-    });
-  };
-
-  const executeCreateClient = async (trimmedName: string) => {
-    try {
-      // Criar cliente no webhook n8n primeiro
-      const createdClient = await createClientInWebhook(trimmedName);
-      
-      // Recarregar clientes do webhook para garantir sincronização e obter IDs atualizados
-      const updatedClients = await loadClientsFromWebhook("clickup");
-      setClients(updatedClients);
-      
-      // Selecionar o cliente criado usando o ID retornado ou buscar pelo nome
-      if (createdClient && createdClient.id) {
-        // Usar o ID retornado pelo webhook (ID real do banco de dados)
-        console.log("Selecionando cliente criado com ID:", createdClient.id);
-        setSelectedClient(createdClient.id);
-      } else {
-        // Se não retornou o cliente, buscar pelo nome na lista atualizada
-        const foundClient = updatedClients.find(
-          (client) => client.name.toLowerCase().trim() === trimmedName.toLowerCase()
-        );
-        if (foundClient) {
-          console.log("Cliente encontrado na lista com ID:", foundClient.id);
-          setSelectedClient(foundClient.id);
-        } else {
-          // Caso não encontre, selecionar o último cliente da lista
-          const lastClient = updatedClients[updatedClients.length - 1];
-          if (lastClient) {
-            console.log("Selecionando último cliente com ID:", lastClient.id);
-            setSelectedClient(lastClient.id);
-          }
-        }
-      }
-      
-      setNewClientName("");
-      setErrors((prev) => ({ ...prev, newClient: undefined }));
-      
-      // Mostrar modal de sucesso
-      setModalState({
-        isOpen: true,
-        type: "success",
-        title: "Cliente Criado",
-        message: `O cliente "${trimmedName}" foi criado com sucesso!`,
-      });
-    } catch (error) {
-      console.error("Erro ao adicionar cliente:", error);
-      setModalState({
-        isOpen: true,
-        type: "error",
-        title: "Erro ao Criar Cliente",
-        message: "Erro ao adicionar cliente. Tente novamente.",
-      });
-    } finally {
-      setPendingAction(null);
-    }
-  };
-
-  const handleRemoveClient = async (e: React.MouseEvent, clientId: string) => {
-    e.stopPropagation();
-    
-    // Buscar o cliente para mostrar no confirm
-    const clientToDelete = clients.find(c => c.id === clientId);
-    const clientName = clientToDelete?.name || "este cliente";
-    
-    // Mostrar modal de confirmação
-    setPendingAction({ type: "delete", clientId, clientName });
-    setModalState({
-      isOpen: true,
-      type: "warning",
-      title: "Confirmar Exclusão",
-      message: `Tem certeza que deseja remover o cliente "${clientName}"?\n\nEsta ação não pode ser desfeita.`,
-      onConfirm: async () => {
-        await executeDeleteClient(clientId, clientName);
-      },
-    });
-  };
-
-  const executeDeleteClient = async (clientId: string, clientName: string) => {
-    try {
-      console.log("Tentando excluir cliente:", { id: clientId, name: clientName });
-      
-      // Deletar cliente no webhook n8n usando o ID real do banco de dados
-      await deleteClientInWebhook(clientId);
-
-      // Recarregar clientes do webhook para garantir sincronização
-      const updatedClients = await loadClientsFromWebhook("clickup");
-      setClients(updatedClients);
-
-      // Se o cliente removido estava selecionado, limpar a seleção
-      if (selectedClient === clientId) {
-        setSelectedClient("");
-      }
-
-      // Mostrar modal de sucesso
-      setModalState({
-        isOpen: true,
-        type: "success",
-        title: "Cliente Excluído",
-        message: `O cliente "${clientName}" foi excluído com sucesso!`,
-      });
-    } catch (error) {
-      console.error("Erro ao remover cliente:", error);
-      setModalState({
-        isOpen: true,
-        type: "error",
-        title: "Erro ao Excluir Cliente",
-        message: "Erro ao remover cliente. Tente novamente.",
-      });
-    } finally {
-      setPendingAction(null);
-    }
-  };
-
   const selectedClientName =
     clients.find((c) => c.id === selectedClient)?.name || "";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-gray-900/50 rounded-xl shadow-sm border border-red-900/30 p-6">
-        {/* Adicionar Cliente */}
-        <div className="mb-6">
-          <label
-            htmlFor="new-client"
-            className="block text-sm font-medium text-gray-300 mb-2"
-          >
-            Adicionar Cliente
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="new-client"
-              type="text"
-              value={newClientName}
-              onChange={(e) => {
-                setNewClientName(e.target.value);
-                setErrors((prev) => ({ ...prev, newClient: undefined }));
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddClient(e as any);
-                }
-              }}
-              placeholder="Nome do cliente"
-              className="flex-1 px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900"
-            />
-            <button
-              type="button"
-              onClick={handleAddClient}
-              className="px-6 py-3 bg-red-900 hover:bg-red-800 text-white rounded-lg transition-colors font-medium"
-            >
-              Adicionar
-            </button>
-          </div>
-          {errors.newClient && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-              {errors.newClient}
-            </p>
-          )}
-        </div>
-
         {/* Cliente Selection */}
         <div className="mb-6">
           <label
@@ -317,7 +112,7 @@ export default function ClickUpForm({
               <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-red-900/50 rounded-lg shadow-lg max-h-60 overflow-auto">
                 {clients.length === 0 ? (
                   <div className="px-4 py-3 text-gray-400 text-sm">
-                    Nenhum cliente cadastrado
+                    Nenhum cliente cadastrado. Adicione clientes na página de Clientes.
                   </div>
                 ) : (
                   clients.map((client) => (
@@ -331,14 +126,6 @@ export default function ClickUpForm({
                       }}
                     >
                       <span className="text-white flex-1">{client.name}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => handleRemoveClient(e, client.id)}
-                        className="ml-2 p-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition-colors"
-                        title="Remover cliente"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
                     </div>
                   ))
                 )}
@@ -374,7 +161,7 @@ export default function ClickUpForm({
             ${
               isExecuting || !selectedClient
                 ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-black to-red-950 text-white hover:from-gray-900 hover:to-red-900 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
+                : "bg-linear-to-r from-black to-red-950 text-white hover:from-gray-900 hover:to-red-900 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
             }
           `}
         >
@@ -388,19 +175,6 @@ export default function ClickUpForm({
           )}
         </button>
       </div>
-
-      {/* Modal de Alerta */}
-      <AlertModal
-        isOpen={modalState.isOpen}
-        onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))}
-        onConfirm={modalState.onConfirm}
-        title={modalState.title}
-        message={modalState.message}
-        type={modalState.type}
-        confirmText={modalState.type === "confirm" || modalState.type === "warning" ? "Confirmar" : "OK"}
-        cancelText="Cancelar"
-        showCancel={modalState.type === "confirm" || modalState.type === "warning"}
-      />
     </form>
   );
 }

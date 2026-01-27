@@ -18,4 +18,6 @@ export { default as LogoutIcon } from "./LogoutIcon";
 export { default as EditIcon } from "./EditIcon";
 export { default as SettingsIcon } from "./SettingsIcon";
 export { default as ShieldIcon } from "./ShieldIcon";
+export { default as UsersIcon } from "./UsersIcon";
+export { default as CalendarIcon } from "./CalendarIcon";
 
