@@ -3,7 +3,7 @@ export const N8N_WEBHOOKS = {
   sharepoint:
     "https://gateway.jeamarketing.com.br/webhook/create-folder-sharepoint",
   clickup: "https://gateway.jeamarketing.com.br/webhook/create-folder-clickup",
-  calendario: "https://gateway.jeamarketing.com.br/webhook/create-calendar-tasks",
+  calendario: "https://gateway.jeamarketing.com.br/webhook/create-calendar",
 } as const;
 
 // Configurações da API do n8n para buscar estatísticas
