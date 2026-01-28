@@ -57,13 +57,10 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const userAvatar = user?.user_metadata?.avatar_url || "";
 
   const getAutomationIcon = (id: string) => {
-    if (id === "sharepoint") {
-      return <SharePointIcon className="w-5 h-5" />;
-    }
+   
     if (id === "calendario") {
       return <CalendarIcon className="w-5 h-5" />;
     }
-    return <ClickUpIcon className="w-5 h-5" />;
   };
 
   const isActive = (path: string) => pathname === path;

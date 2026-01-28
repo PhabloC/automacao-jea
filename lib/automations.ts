@@ -22,18 +22,7 @@ export const automationDefinitions: Omit<
   AutomationData,
   "executionCount" | "successCount" | "errorCount" | "status" | "lastRun"
 >[] = [
-  {
-    id: "sharepoint",
-    title: "Criar Pasta no SharePoint",
-    description:
-      "Automação para criar pastas automaticamente no SharePoint com estrutura organizada e permissões configuradas.",
-  },
-  {
-    id: "clickup",
-    title: "Criar Tarefas no ClickUp",
-    description:
-      "Automação para criar tarefas no ClickUp de forma automatizada, organizando projetos e atribuindo responsáveis.",
-  },
+ 
   {
     id: "calendario",
     title: "Calendário",
