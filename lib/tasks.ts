@@ -53,6 +53,15 @@ export function getTasks(): Task[] {
   return [];
 }
 
+// Deletar uma tarefa específica
+export function deleteTask(taskId: string): void {
+  if (typeof window === "undefined") return;
+
+  const tasks = getTasks();
+  const updatedTasks = tasks.filter((task) => task.id !== taskId);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTasks));
+}
+
 // Limpar todas as tarefas (útil para testes)
 export function clearTasks(): void {
   if (typeof window === "undefined") return;
