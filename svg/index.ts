@@ -1,5 +1,4 @@
-export { default as SharePointIcon } from "./SharePointIcon";
-export { default as ClickUpIcon } from "./ClickUpIcon";
+
 export { default as LightningIcon } from "./LightningIcon";
 export { default as BarChartIcon } from "./BarChartIcon";
 export { default as CheckCircleIcon } from "./CheckCircleIcon";
@@ -18,4 +17,6 @@ export { default as LogoutIcon } from "./LogoutIcon";
 export { default as EditIcon } from "./EditIcon";
 export { default as SettingsIcon } from "./SettingsIcon";
 export { default as ShieldIcon } from "./ShieldIcon";
+export { default as UsersIcon } from "./UsersIcon";
+export { default as CalendarIcon } from "./CalendarIcon";
 

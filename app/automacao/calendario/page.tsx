@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/sidebar/Sidebar";
-import AutomationPage from "@/components/automation-page/AutomationPage";
-import { ClickUpIcon, SpinnerIcon, CheckIcon, CloseIcon } from "@/svg";
+import CalendarForm from "@/components/calendar-form/CalendarForm";
+import { Post } from "@/components/calendar-form/types";
+import { CalendarIcon, SpinnerIcon, CheckIcon, CloseIcon } from "@/svg";
 import {
   createInitialAutomations,
   executeAutomation,
@@ -13,7 +14,7 @@ import {
   type AutomationData,
 } from "@/lib/automations";
 
-export default function ClickUpAutomationPage() {
+export default function CalendarioAutomationPage() {
   const { user, loading: authLoading, hasPermission } = useAuth();
   const router = useRouter();
   const [automation, setAutomation] = useState<AutomationData | null>(null);
@@ -39,13 +40,13 @@ export default function ClickUpAutomationPage() {
 
     const loadAutomation = async () => {
       const initialAutomations = createInitialAutomations();
-      const clickupAutomation = initialAutomations.find(
-        (a) => a.id === "clickup"
+      const calendarioAutomation = initialAutomations.find(
+        (a) => a.id === "calendario"
       );
-      if (clickupAutomation) {
-        setAutomation(clickupAutomation);
+      if (calendarioAutomation) {
+        setAutomation(calendarioAutomation);
         try {
-          const stats = await fetchN8NStatistics("clickup");
+          const stats = await fetchN8NStatistics("calendario");
           setAutomation((prev) =>
             prev
               ? {
@@ -68,19 +69,26 @@ export default function ClickUpAutomationPage() {
   }, [user]);
 
   const handleExecute = async (
-    automationId: string,
-    params?: {
-      clientId?: string;
-      clientName?: string;
-    }
+    clientId: string,
+    monthId: string,
+    clientName: string,
+    monthName: string,
+    posts: Post[]
   ) => {
     if (executing) return;
 
     setExecuting(true);
 
     try {
-      const result = await executeAutomation(automationId, params);
-      const stats = await fetchN8NStatistics(automationId);
+      const result = await executeAutomation("calendario", {
+        clientId,
+        monthId,
+        clientName,
+        monthName,
+        posts,
+      });
+      
+      const stats = await fetchN8NStatistics("calendario");
 
       setAutomation((prev) =>
         prev
@@ -140,12 +148,35 @@ export default function ClickUpAutomationPage() {
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <AutomationPage
-            automation={automation}
-            executing={executing}
-            onExecute={handleExecute}
-            icon={<ClickUpIcon className="w-8 h-8 text-white" />}
-          />
+          <div className="space-y-6">
+            {/* Automation Details Card */}
+            <div className="bg-gray-900/50 rounded-xl shadow-sm border border-red-900/30 p-8">
+              <div className="flex items-start gap-6 mb-6">
+                <div className="flex items-center justify-center w-16 h-16 bg-linear-to-br from-black to-red-950 rounded-xl">
+                  <CalendarIcon className="w-8 h-8 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-white mb-2">
+                    {automation.title}
+                  </h1>
+                  <p className="text-gray-300 text-lg">
+                    {automation.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Automation Card for Execution */}
+            <div>
+              <h2 className="text-xl font-semibold text-white mb-4">
+                Executar Automação
+              </h2>
+              <CalendarForm
+                onExecute={handleExecute}
+                isExecuting={executing}
+              />
+            </div>
+          </div>
         </div>
       </main>
 

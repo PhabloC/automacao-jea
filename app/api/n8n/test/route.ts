@@ -28,27 +28,27 @@ export async function GET(request: NextRequest) {
   }
 
   // Teste 2: Verificar se o workflow ID está configurado
-  if (!N8N_CONFIG.workflowIds.sharepoint) {
+  if (!N8N_CONFIG.workflowIds.calendario) {
     testResults.tests.push({
-      name: "Workflow ID SharePoint",
+      name: "Workflow ID Calendário",
       status: "error",
-      message: "N8N_WORKFLOW_ID_SHAREPOINT não está configurado",
+      message: "N8N_WORKFLOW_ID_CALENDARIO não está configurado",
     });
   } else {
     testResults.tests.push({
-      name: "Workflow ID SharePoint",
+      name: "Workflow ID Calendário",
       status: "success",
-      message: `Workflow ID: ${N8N_CONFIG.workflowIds.sharepoint}`,
+      message: `Workflow ID: ${N8N_CONFIG.workflowIds.calendario}`,
     });
   }
 
   // Teste 3: Tentar fazer uma requisição de teste
-  if (N8N_CONFIG.apiKey && N8N_CONFIG.workflowIds.sharepoint) {
+  if (N8N_CONFIG.apiKey && N8N_CONFIG.workflowIds.calendario) {
     try {
       const baseUrl = N8N_CONFIG.baseUrl.replace(/\/$/, "");
       const apiUrl = `${baseUrl}/api/v1/executions`;
       const url = new URL(apiUrl);
-      url.searchParams.append("workflowId", N8N_CONFIG.workflowIds.sharepoint);
+      url.searchParams.append("workflowId", N8N_CONFIG.workflowIds.calendario);
       url.searchParams.append("limit", "1");
 
       const headers: Record<string, string> = {

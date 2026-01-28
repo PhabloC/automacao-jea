@@ -22,17 +22,12 @@ export const automationDefinitions: Omit<
   AutomationData,
   "executionCount" | "successCount" | "errorCount" | "status" | "lastRun"
 >[] = [
+ 
   {
-    id: "sharepoint",
-    title: "Criar Pasta no SharePoint",
+    id: "calendario",
+    title: "Calendário",
     description:
-      "Automação para criar pastas automaticamente no SharePoint com estrutura organizada e permissões configuradas.",
-  },
-  {
-    id: "clickup",
-    title: "Criar Tarefas no ClickUp",
-    description:
-      "Automação para criar tarefas no ClickUp de forma automatizada, organizando projetos e atribuindo responsáveis.",
+      "Automação para criar tarefas de posts no calendário, organizando conteúdo por cliente e mês.",
   },
 ];
 
@@ -47,6 +42,15 @@ export function createInitialAutomations(): AutomationData[] {
   }));
 }
 
+// Interface para posts do calendário
+export interface CalendarPost {
+  id: string;
+  titulo: string;
+  formato: string;
+  descricao: string;
+  referencia: string;
+}
+
 // Executa uma automação
 export async function executeAutomation(
   automationId: string,
@@ -56,6 +60,7 @@ export async function executeAutomation(
     clientName?: string;
     monthName?: string;
     quantidadeDePost?: string;
+    posts?: CalendarPost[];
   }
 ): Promise<ExecutionResult> {
   const now = new Date();
@@ -64,9 +69,9 @@ export async function executeAutomation(
     minute: "2-digit",
   });
 
-  // Para SharePoint, faz chamada real ao webhook do n8n
-  if (automationId === "sharepoint" && params?.clientId && params?.monthId) {
-    const webhookUrl = N8N_WEBHOOKS.sharepoint;
+  // Para Calendário, faz chamada real ao webhook do n8n
+  if (automationId === "calendario" && params?.clientId && params?.monthId && params?.posts) {
+    const webhookUrl = N8N_WEBHOOKS.calendario;
 
     if (!webhookUrl) {
       return {
@@ -87,7 +92,7 @@ export async function executeAutomation(
           monthId: params.monthId,
           clientName: params.clientName,
           monthName: params.monthName,
-          quantidadeDePost: params.quantidadeDePost,
+          posts: params.posts,
         }),
       });
 
@@ -98,18 +103,18 @@ export async function executeAutomation(
         const monthName = params.monthName || "o mês selecionado";
         return {
           success: false,
-          message: `Erro ao criar pasta para ${clientName} - ${monthName}. Status: ${response.status}`,
+          message: `Erro ao criar tarefas no calendário para ${clientName} - ${monthName}. Status: ${response.status}`,
           timestamp: `Hoje às ${timeString}`,
         };
       }
 
-      // Assume que o n8n retorna um objeto com success e message
-      const success = data?.success !== false; // Considera sucesso se não for explicitamente false
+      const success = data?.success !== false;
+      const postsCount = params.posts.length;
       const message =
         data?.message ||
         (success
-          ? `Pasta criada com sucesso para ${params.clientName} - ${params.monthName}!`
-          : `Erro ao criar pasta para ${params.clientName} - ${params.monthName}. Tente novamente.`);
+          ? `${postsCount} tarefa${postsCount > 1 ? "s" : ""} criada${postsCount > 1 ? "s" : ""} com sucesso no calendário para ${params.clientName} - ${params.monthName}!`
+          : `Erro ao criar tarefas no calendário para ${params.clientName} - ${params.monthName}. Tente novamente.`);
 
       return {
         success,
@@ -123,67 +128,7 @@ export async function executeAutomation(
 
       return {
         success: false,
-        message: `Erro ao conectar com o servidor. Não foi possível criar pasta para ${clientName} - ${monthName}.`,
-        timestamp: `Hoje às ${timeString}`,
-      };
-    }
-  }
-
-  // Para ClickUp, faz chamada real ao webhook do n8n
-  if (automationId === "clickup" && params?.clientId) {
-    const webhookUrl = N8N_WEBHOOKS.clickup;
-
-    if (!webhookUrl) {
-      return {
-        success: false,
-        message: "Webhook não configurado para esta automação",
-        timestamp: `Hoje às ${timeString}`,
-      };
-    }
-
-    try {
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          clientId: params.clientId,
-          clientName: params.clientName,
-        }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        const clientName = params.clientName || "o cliente selecionado";
-        return {
-          success: false,
-          message: `Erro ao criar tarefas no ClickUp para ${clientName}. Status: ${response.status}`,
-          timestamp: `Hoje às ${timeString}`,
-        };
-      }
-
-      // Assume que o n8n retorna um objeto com success e message
-      const success = data?.success !== false; // Considera sucesso se não for explicitamente false
-      const message =
-        data?.message ||
-        (success
-          ? `Tarefas criadas com sucesso no ClickUp para ${params.clientName}!`
-          : `Erro ao criar tarefas no ClickUp para ${params.clientName}. Tente novamente.`);
-
-      return {
-        success,
-        message,
-        timestamp: `Hoje às ${timeString}`,
-      };
-    } catch (error) {
-      const clientName = params.clientName || "o cliente selecionado";
-      console.error("Erro ao chamar webhook:", error);
-
-      return {
-        success: false,
-        message: `Erro ao conectar com o servidor. Não foi possível criar tarefas no ClickUp para ${clientName}.`,
+        message: `Erro ao conectar com o servidor. Não foi possível criar tarefas no calendário para ${clientName} - ${monthName}.`,
         timestamp: `Hoje às ${timeString}`,
       };
     }
