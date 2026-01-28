@@ -2,20 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import { CloseIcon } from "@/svg";
+import { AlertModalProps } from "./types";
 
 export type AlertModalType = "success" | "error" | "warning" | "confirm";
-
-export interface AlertModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm?: () => void;
-  title: string;
-  message: string;
-  type?: AlertModalType;
-  confirmText?: string;
-  cancelText?: string;
-  showCancel?: boolean;
-}
 
 export default function AlertModal({
   isOpen,
@@ -133,14 +122,16 @@ export default function AlertModal({
         {/* Botão de fechar */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
+          className="cursor-pointer absolute top-4 right-4 p-1 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
           aria-label="Fechar modal"
         >
           <CloseIcon className="w-5 h-5" />
         </button>
 
         {/* Ícone do tipo */}
-        <div className={`w-12 h-12 rounded-full ${styles.iconBg} flex items-center justify-center mb-4`}>
+        <div
+          className={`w-12 h-12 rounded-full ${styles.iconBg} flex items-center justify-center mb-4`}
+        >
           {type === "success" && (
             <svg
               className={`w-6 h-6 ${styles.iconColor}`}
@@ -214,7 +205,7 @@ export default function AlertModal({
           {showCancel && (
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
+              className="cursor-pointer px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
             >
               {cancelText}
             </button>
@@ -222,7 +213,7 @@ export default function AlertModal({
           <button
             ref={confirmButtonRef}
             onClick={handleConfirm}
-            className={`px-4 py-2 ${styles.button} text-white rounded-lg transition-colors font-medium`}
+            className={`cursor-pointer px-4 py-2 ${styles.button} text-white rounded-lg transition-colors font-medium`}
           >
             {confirmText}
           </button>
