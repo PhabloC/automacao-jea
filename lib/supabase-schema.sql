@@ -83,6 +83,41 @@ CREATE TRIGGER update_user_roles_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
+-- TABELA DE TAREFAS CRIADAS PELAS AUTOMAÇÕES (ex.: calendário)
+-- Admins visualizam na página "Tarefas" as criadas por todos os usuários
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS automation_tasks (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  automation_id TEXT NOT NULL,
+  automation_name TEXT NOT NULL,
+  client_id TEXT NOT NULL,
+  client_name TEXT NOT NULL,
+  month_id TEXT,
+  month_name TEXT,
+  posts_count INTEGER,
+  user_id TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  user_email TEXT NOT NULL,
+  user_avatar TEXT,
+  success BOOLEAN NOT NULL DEFAULT false,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_automation_tasks_created_at ON automation_tasks(created_at DESC);
+CREATE INDEX idx_automation_tasks_user_id ON automation_tasks(user_id);
+
+-- RLS (Row Level Security) – políticas aplicam-se a acesso direto ao Supabase.
+-- A API usa service role e aplica regras de negócio (admin, hasPermission) nas rotas.
+
+ALTER TABLE automation_tasks ENABLE ROW LEVEL SECURITY;
+
+-- Ninguém acessa diretamente via client; a API é o único ponto de entrada.
+CREATE POLICY "No direct access to automation_tasks" ON automation_tasks
+  FOR ALL USING (false);
+
+-- =====================================================
 -- IMPORTANTE: Após criar a tabela, insira o primeiro admin manualmente
 -- Substitua 'SEU_USER_ID' pelo ID do usuário que será o primeiro admin
 -- =====================================================

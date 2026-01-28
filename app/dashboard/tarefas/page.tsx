@@ -11,14 +11,26 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@/svg";
-import { getTasks, deleteTask, type Task } from "@/lib/tasks";
+import {
+  getTasks,
+  deleteTask,
+  fetchTasksFromApi,
+  deleteTaskFromApi,
+  type Task,
+} from "@/lib/tasks";
 import Image from "next/image";
 import AlertModal, {
   type AlertModalType,
 } from "@/components/alert-modal/AlertModal";
 
 export default function TarefasPage() {
-  const { user, loading: authLoading, isAdmin } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    isAdmin,
+    session,
+    isLocalhost,
+  } = useAuth();
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,15 +65,22 @@ export default function TarefasPage() {
     if (user && isAdmin) {
       loadTasks();
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin, session?.access_token, isLocalhost]);
 
-  const loadTasks = () => {
+  const loadTasks = async () => {
     setIsLoading(true);
     try {
-      const allTasks = getTasks();
-      setTasks(allTasks);
+      if (isLocalhost) {
+        setTasks(getTasks());
+      } else if (session?.access_token) {
+        const allTasks = await fetchTasksFromApi(session.access_token);
+        setTasks(allTasks);
+      } else {
+        setTasks([]);
+      }
     } catch (error) {
       console.error("Erro ao carregar tarefas:", error);
+      setTasks([]);
     } finally {
       setIsLoading(false);
     }
@@ -73,15 +92,15 @@ export default function TarefasPage() {
       type: "warning",
       title: "Confirmar Exclusão",
       message: `Tem certeza que deseja excluir esta tarefa?\n\nAutomação: ${task.automationName}\nCliente: ${task.clientName}\n\nEsta ação não pode ser desfeita.`,
-      onConfirm: () => {
-        deleteTask(task.id);
-        loadTasks();
-        setModalState((prev) => ({ ...prev, isOpen: false }));
-        // Ajustar página se necessário após exclusão
-        const totalPages = Math.ceil((tasks.length - 1) / tasksPerPage);
-        if (currentPage > totalPages && totalPages > 0) {
-          setCurrentPage(totalPages);
+      onConfirm: async () => {
+        if (isLocalhost) {
+          deleteTask(task.id);
+          await loadTasks();
+        } else if (session?.access_token) {
+          const ok = await deleteTaskFromApi(session.access_token, task.id);
+          if (ok) await loadTasks();
         }
+        setModalState((prev) => ({ ...prev, isOpen: false }));
       },
     });
   };

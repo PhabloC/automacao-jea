@@ -13,10 +13,16 @@ import {
   fetchN8NStatistics,
   type AutomationData,
 } from "@/lib/automations";
-import { saveTask } from "@/lib/tasks";
+import { saveTask, saveTaskToApi } from "@/lib/tasks";
 
 export default function CalendarioAutomationPage() {
-  const { user, loading: authLoading, hasPermission } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    hasPermission,
+    session,
+    isLocalhost,
+  } = useAuth();
   const router = useRouter();
   const [automation, setAutomation] = useState<AutomationData | null>(null);
   const [executing, setExecuting] = useState(false);
@@ -89,9 +95,9 @@ export default function CalendarioAutomationPage() {
         posts,
       });
 
-      // Salvar tarefa criada
+      // Salvar tarefa criada (Supabase em produção; localStorage em localhost)
       if (user) {
-        saveTask({
+        const taskPayload = {
           automationId: "calendario",
           automationName: "Calendário",
           clientId,
@@ -108,7 +114,13 @@ export default function CalendarioAutomationPage() {
           userAvatar: user.user_metadata?.avatar_url,
           success: result.success,
           message: result.message,
-        });
+        };
+
+        if (isLocalhost) {
+          saveTask(taskPayload);
+        } else if (session?.access_token) {
+          await saveTaskToApi(session.access_token, taskPayload);
+        }
       }
 
       const stats = await fetchN8NStatistics("calendario");
