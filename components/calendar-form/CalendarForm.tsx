@@ -90,7 +90,7 @@ export default function CalendarForm({
   // Carregar clientes ao montar o componente
   useEffect(() => {
     const loadClients = async () => {
-      const webhookClients = await loadClientsFromWebhook("sharepoint");
+      const webhookClients = await loadClientsFromWebhook();
       setClients(webhookClients);
     };
     loadClients();

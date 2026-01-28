@@ -57,7 +57,7 @@ export default function ClientesPage() {
   const loadClients = async () => {
     setIsLoading(true);
     try {
-      const webhookClients = await loadClientsFromWebhook("sharepoint");
+      const webhookClients = await loadClientsFromWebhook();
       setClients(webhookClients);
     } catch (error) {
       console.error("Erro ao carregar clientes:", error);
@@ -111,7 +111,7 @@ export default function ClientesPage() {
       await createClientInWebhook(clientName);
       
       // Recarregar lista de clientes
-      const updatedClients = await loadClientsFromWebhook("sharepoint");
+      const updatedClients = await loadClientsFromWebhook();
       setClients(updatedClients);
       setNewClientName("");
 
@@ -155,7 +155,7 @@ export default function ClientesPage() {
       await deleteClientInWebhook(clientId);
 
       // Recarregar lista de clientes
-      const updatedClients = await loadClientsFromWebhook("sharepoint");
+      const updatedClients = await loadClientsFromWebhook();
       setClients(updatedClients);
 
       setModalState({

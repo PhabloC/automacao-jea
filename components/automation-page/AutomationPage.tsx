@@ -1,8 +1,6 @@
 "use client";
 
 import AutomationCard from "@/components/automation-card/AutomationCard";
-import SharePointForm from "@/components/sharepoint-form/SharePointForm";
-import ClickUpForm from "@/components/clickup-form/ClickUpForm";
 import { AutomationPageProps } from "./types";
 
 export default function AutomationPage({
@@ -33,46 +31,15 @@ export default function AutomationPage({
         <h2 className="text-xl font-semibold text-white mb-4">
           Executar Automação
         </h2>
-        {automation.id === "sharepoint" ? (
-          <SharePointForm
-            onExecute={async (
-              clientId,
-              monthId,
-              clientName,
-              monthName,
-              quantidadeDePost
-            ) => {
-              await onExecute(automation.id, {
-                clientId,
-                monthId,
-                clientName,
-                monthName,
-                quantidadeDePost,
-              });
-            }}
-            isExecuting={executing}
-          />
-        ) : automation.id === "clickup" ? (
-          <ClickUpForm
-            onExecute={async (clientId, clientName) => {
-              await onExecute(automation.id, {
-                clientId,
-                clientName,
-              });
-            }}
-            isExecuting={executing}
-          />
-        ) : (
-          <AutomationCard
-            title={automation.title}
-            description={automation.description}
-            icon={icon}
-            status={automation.status}
-            lastRun={automation.lastRun}
-            onExecute={() => onExecute(automation.id)}
-            isExecuting={executing}
-          />
-        )}
+        <AutomationCard
+          title={automation.title}
+          description={automation.description}
+          icon={icon}
+          status={automation.status}
+          lastRun={automation.lastRun}
+          onExecute={() => onExecute(automation.id)}
+          isExecuting={executing}
+        />
       </div>
     </div>
   );

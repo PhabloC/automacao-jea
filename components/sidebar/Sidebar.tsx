@@ -6,8 +6,6 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   DashboardIcon,
-  SharePointIcon,
-  ClickUpIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   UserIcon,
