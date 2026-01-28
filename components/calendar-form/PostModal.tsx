@@ -140,7 +140,7 @@ export default function PostModal({
           <h2 className="text-xl font-semibold text-white">Adicionar Posts</h2>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
+            className="cursor-pointer p-1 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
             aria-label="Fechar modal"
           >
             <CloseIcon className="w-5 h-5" />
@@ -162,7 +162,7 @@ export default function PostModal({
                 <button
                   type="button"
                   onClick={() => togglePost(post.id)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-800/70 transition-colors"
+                  className="cursor-pointer w-full flex items-center justify-between p-4 hover:bg-gray-800/70 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <ChevronRightIcon 
@@ -186,7 +186,7 @@ export default function PostModal({
                     <button
                       type="button"
                       onClick={(e) => handleRemovePost(post.id, e)}
-                      className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition-colors"
+                      className="cursor-pointer p-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition-colors"
                       title="Remover post"
                     >
                       <TrashIcon className="w-4 h-4" />
@@ -268,11 +268,11 @@ export default function PostModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-red-900/30">
+        <div className=" flex items-center justify-between p-6 border-t border-red-900/30">
           <button
             type="button"
             onClick={handleAddPost}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+            className=" cursor-pointer px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
           >
             <svg
               className="w-4 h-4"
@@ -294,7 +294,7 @@ export default function PostModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
+              className="cursor-pointer px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
             >
               Cancelar
             </button>
@@ -302,7 +302,7 @@ export default function PostModal({
               type="button"
               onClick={handleSave}
               disabled={!posts.some((p) => p.titulo.trim() && p.formato.trim())}
-              className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+              className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-medium ${
                 posts.some((p) => p.titulo.trim() && p.formato.trim())
                   ? "bg-red-900 hover:bg-red-800 text-white"
                   : "bg-gray-700 text-gray-400 cursor-not-allowed"

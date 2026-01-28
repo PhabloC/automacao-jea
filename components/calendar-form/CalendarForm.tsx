@@ -24,6 +24,69 @@ export default function CalendarForm({
     posts?: string;
   }>({});
 
+  const STORAGE_KEY = "calendar-form-data";
+  const isInitialLoad = useRef(true);
+
+  // Carregar dados salvos do localStorage ao montar o componente
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          
+          // Carregar posts
+          if (parsed.posts && Array.isArray(parsed.posts) && parsed.posts.length > 0) {
+            // Validar estrutura dos posts
+            const validPosts = parsed.posts.filter(
+              (p: any) => p && typeof p === "object" && p.id && p.titulo && p.formato
+            );
+            if (validPosts.length > 0) {
+              setPosts(validPosts);
+            }
+          }
+          
+          // Carregar cliente selecionado
+          if (parsed.selectedClient && typeof parsed.selectedClient === "string") {
+            setSelectedClient(parsed.selectedClient);
+          }
+          
+          // Carregar mês selecionado
+          if (parsed.selectedMonth && typeof parsed.selectedMonth === "string") {
+            setSelectedMonth(parsed.selectedMonth);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados do localStorage:", error);
+    } finally {
+      // Aguardar um pouco antes de permitir salvamento para evitar conflitos
+      setTimeout(() => {
+        isInitialLoad.current = false;
+      }, 100);
+    }
+  }, []);
+
+  // Salvar dados no localStorage sempre que mudarem (exceto no carregamento inicial)
+  useEffect(() => {
+    if (isInitialLoad.current) {
+      return; // Não salvar durante o carregamento inicial
+    }
+    
+    try {
+      if (typeof window !== "undefined") {
+        const dataToSave = {
+          posts,
+          selectedClient,
+          selectedMonth,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      }
+    } catch (error) {
+      console.error("Erro ao salvar dados no localStorage:", error);
+    }
+  }, [posts, selectedClient, selectedMonth]);
+
   // Carregar clientes ao montar o componente
   useEffect(() => {
     const loadClients = async () => {
@@ -78,15 +141,54 @@ export default function CalendarForm({
       selectedMonthName,
       posts
     );
+    
+    // Limpar dados do localStorage após execução bem-sucedida
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      setPosts([]);
+      setSelectedClient("");
+      setSelectedMonth("");
+    } catch (error) {
+      console.error("Erro ao limpar localStorage:", error);
+    }
   };
 
   const handleSavePosts = (newPosts: Post[]) => {
     setPosts(newPosts);
     setErrors((prev) => ({ ...prev, posts: undefined }));
+    
+    // Salvar imediatamente no localStorage quando posts forem salvos
+    try {
+      if (typeof window !== "undefined") {
+        const dataToSave = {
+          posts: newPosts,
+          selectedClient,
+          selectedMonth,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      }
+    } catch (error) {
+      console.error("Erro ao salvar posts no localStorage:", error);
+    }
   };
 
   const handleRemovePost = (postId: string) => {
-    setPosts(posts.filter((p) => p.id !== postId));
+    const updatedPosts = posts.filter((p) => p.id !== postId);
+    setPosts(updatedPosts);
+    
+    // Salvar imediatamente no localStorage quando post for removido
+    try {
+      if (typeof window !== "undefined") {
+        const dataToSave = {
+          posts: updatedPosts,
+          selectedClient,
+          selectedMonth,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      }
+    } catch (error) {
+      console.error("Erro ao salvar posts no localStorage:", error);
+    }
   };
 
   const selectedClientName =
@@ -217,7 +319,7 @@ export default function CalendarForm({
               type="button"
               onClick={() => setIsPostModalOpen(true)}
               disabled={isExecuting}
-              className="px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded-lg transition-colors font-medium text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cursor-pointer px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded-lg transition-colors font-medium text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-4 h-4"
@@ -268,7 +370,7 @@ export default function CalendarForm({
                   <button
                     type="button"
                     onClick={() => handleRemovePost(post.id)}
-                    className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition-colors ml-2"
+                    className="cursor-pointer p-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition-colors ml-2"
                     title="Remover post"
                   >
                     <TrashIcon className="w-4 h-4" />
