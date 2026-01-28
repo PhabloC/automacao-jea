@@ -15,10 +15,11 @@ interface PostFormData {
   id: string;
   titulo: string;
   formato: string;
+  canais: string;
+  dataPublicacao: string;
   descricao: string;
   referencia: string;
 }
-
 
 export default function PostModal({
   isOpen,
@@ -34,7 +35,7 @@ export default function PostModal({
   useEffect(() => {
     if (isOpen) {
       if (initialPosts.length > 0) {
-        setPosts(initialPosts.map(p => ({ ...p })));
+        setPosts(initialPosts.map((p) => ({ ...p })));
         setOpenPostId(initialPosts[0].id);
       } else {
         const newPost = createEmptyPost();
@@ -67,6 +68,8 @@ export default function PostModal({
     id: crypto.randomUUID(),
     titulo: "",
     formato: "",
+    canais: "",
+    dataPublicacao: "",
     descricao: "",
     referencia: "",
   });
@@ -96,19 +99,19 @@ export default function PostModal({
   const handlePostChange = (
     postId: string,
     field: keyof PostFormData,
-    value: string
+    value: string,
   ) => {
     setPosts(
-      posts.map((p) => (p.id === postId ? { ...p, [field]: value } : p))
+      posts.map((p) => (p.id === postId ? { ...p, [field]: value } : p)),
     );
   };
 
   const handleSave = () => {
     // Validar se pelo menos um post está preenchido
     const validPosts = posts.filter(
-      (p) => p.titulo.trim() && p.formato.trim()
+      (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim(),
     );
-    
+
     if (validPosts.length === 0) {
       return;
     }
@@ -151,8 +154,8 @@ export default function PostModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-3">
           {posts.map((post, index) => {
             const isOpen = openPostId === post.id;
-            const hasContent = post.titulo || post.formato;
-            
+            const hasContent = post.titulo || post.formato || post.canais;
+
             return (
               <div
                 key={post.id}
@@ -165,10 +168,10 @@ export default function PostModal({
                   className="cursor-pointer w-full flex items-center justify-between p-4 hover:bg-gray-800/70 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <ChevronRightIcon 
+                    <ChevronRightIcon
                       className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
                         isOpen ? "rotate-90" : ""
-                      }`} 
+                      }`}
                     />
                     <div className="text-left">
                       <span className="text-sm font-medium text-red-400">
@@ -176,8 +179,9 @@ export default function PostModal({
                       </span>
                       {hasContent && !isOpen && (
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {post.titulo || "Sem título"} 
+                          {post.titulo || "Sem título"}
                           {post.formato && ` • ${post.formato}`}
+                          {post.canais && ` • ${post.canais}`}
                         </p>
                       )}
                     </div>
@@ -218,13 +222,64 @@ export default function PostModal({
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Formato *
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={post.formato}
                         onChange={(e) =>
                           handlePostChange(post.id, "formato", e.target.value)
                         }
-                        placeholder="Ex: Carrossel, Reels, Story, Vídeo..."
+                        className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900"
+                      >
+                        <option value="">Selecione um formato</option>
+                        <option value="Feed">Feed</option>
+                        <option value="Reels">Reels</option>
+                        <option value="Story">Story</option>
+                        <option value="Estático">Estático</option>
+                        <option value="Vídeo">Vídeo</option>
+                        <option value="Carrossel">Carrossel</option>
+                        <option value="Áudio">Áudio</option>
+                        <option value="Texto">Texto</option>
+                      </select>
+                    </div>
+
+                    {/* Canais */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Canais *
+                      </label>
+                      <select
+                        value={post.canais}
+                        onChange={(e) =>
+                          handlePostChange(post.id, "canais", e.target.value)
+                        }
+                        className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900"
+                      >
+                        <option value="">Selecione um canal</option>
+                        <option value="Youtube">Youtube</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="Facebook">Facebook</option>
+                        <option value="Ig. Channel">Ig. Channel</option>
+                        <option value="TikTok">TikTok</option>
+                        <option value="Indeed">Indeed</option>
+                        <option value="Google">Google</option>
+                        <option value="WhatsApp">WhatsApp</option>
+                      </select>
+                    </div>
+
+                    {/* Data de Publicação */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Data de Publicação
+                      </label>
+                      <input
+                        type="date"
+                        value={post.dataPublicacao}
+                        onChange={(e) =>
+                          handlePostChange(
+                            post.id,
+                            "dataPublicacao",
+                            e.target.value,
+                          )
+                        }
                         className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900"
                       />
                     </div>
@@ -254,7 +309,11 @@ export default function PostModal({
                         type="text"
                         value={post.referencia}
                         onChange={(e) =>
-                          handlePostChange(post.id, "referencia", e.target.value)
+                          handlePostChange(
+                            post.id,
+                            "referencia",
+                            e.target.value,
+                          )
                         }
                         placeholder="Link ou referência do post"
                         className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900"
@@ -289,7 +348,7 @@ export default function PostModal({
             </svg>
             Adicionar Post
           </button>
-          
+
           <div className="flex gap-3">
             <button
               type="button"
@@ -301,9 +360,15 @@ export default function PostModal({
             <button
               type="button"
               onClick={handleSave}
-              disabled={!posts.some((p) => p.titulo.trim() && p.formato.trim())}
+              disabled={
+                !posts.some(
+                  (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim(),
+                )
+              }
               className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-medium ${
-                posts.some((p) => p.titulo.trim() && p.formato.trim())
+                posts.some(
+                  (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim(),
+                )
                   ? "bg-red-900 hover:bg-red-800 text-white"
                   : "bg-gray-700 text-gray-400 cursor-not-allowed"
               }`}

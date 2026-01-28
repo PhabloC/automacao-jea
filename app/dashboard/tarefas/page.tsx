@@ -4,15 +4,40 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/sidebar/Sidebar";
-import { SpinnerIcon, CheckCircleIcon, ShieldIcon } from "@/svg";
-import { getTasks, type Task } from "@/lib/tasks";
+import {
+  SpinnerIcon,
+  CheckCircleIcon,
+  TrashIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@/svg";
+import { getTasks, deleteTask, type Task } from "@/lib/tasks";
 import Image from "next/image";
+import AlertModal, {
+  type AlertModalType,
+} from "@/components/alert-modal/AlertModal";
 
 export default function TarefasPage() {
   const { user, loading: authLoading, isAdmin } = useAuth();
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const tasksPerPage = 4;
+
+  // Estados do modal
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: AlertModalType;
+    title: string;
+    message: string;
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    type: "confirm",
+    title: "",
+    message: "",
+  });
 
   // Redirecionar se não for admin
   useEffect(() => {
@@ -41,6 +66,38 @@ export default function TarefasPage() {
       setIsLoading(false);
     }
   };
+
+  const handleDeleteTask = (task: Task) => {
+    setModalState({
+      isOpen: true,
+      type: "warning",
+      title: "Confirmar Exclusão",
+      message: `Tem certeza que deseja excluir esta tarefa?\n\nAutomação: ${task.automationName}\nCliente: ${task.clientName}\n\nEsta ação não pode ser desfeita.`,
+      onConfirm: () => {
+        deleteTask(task.id);
+        loadTasks();
+        setModalState((prev) => ({ ...prev, isOpen: false }));
+        // Ajustar página se necessário após exclusão
+        const totalPages = Math.ceil((tasks.length - 1) / tasksPerPage);
+        if (currentPage > totalPages && totalPages > 0) {
+          setCurrentPage(totalPages);
+        }
+      },
+    });
+  };
+
+  // Calcular tarefas da página atual
+  const totalPages = Math.ceil(tasks.length / tasksPerPage);
+  const startIndex = (currentPage - 1) * tasksPerPage;
+  const endIndex = startIndex + tasksPerPage;
+  const currentTasks = tasks.slice(startIndex, endIndex);
+
+  // Ajustar página se necessário quando as tarefas mudarem
+  useEffect(() => {
+    if (tasks.length > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [tasks.length, totalPages, currentPage]);
 
   // Formatar data
   const formatDate = (dateString: string) => {
@@ -137,105 +194,218 @@ export default function TarefasPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className={`p-4 rounded-lg border transition-colors ${
-                        task.success
-                          ? "bg-gray-800/50 border-green-900/30"
-                          : "bg-gray-800/50 border-red-900/30"
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        {/* Avatar do Usuário */}
-                        <div className="shrink-0">
-                          {task.userAvatar ? (
-                            <Image
-                              src={task.userAvatar}
-                              alt={task.userName}
-                              width={48}
-                              height={48}
-                              className="rounded-full"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
-                              <span className="text-white font-semibold text-lg">
-                                {task.userName.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Informações da Tarefa */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-4 mb-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-white font-semibold">
-                                  {task.userName}
-                                </span>
-                                <span className="text-gray-500">•</span>
-                                <span className="text-gray-400 text-sm">
-                                  {formatDate(task.createdAt)}
+                <>
+                  <div className="space-y-3">
+                    {currentTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className={`p-4 rounded-lg border transition-colors ${
+                          task.success
+                            ? "bg-gray-800/50 border-green-900/30"
+                            : "bg-gray-800/50 border-red-900/30"
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          {/* Avatar do Usuário */}
+                          <div className="shrink-0">
+                            {task.userAvatar ? (
+                              <Image
+                                src={task.userAvatar}
+                                alt={task.userName}
+                                width={48}
+                                height={48}
+                                className="rounded-full"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
+                                <span className="text-white font-semibold text-lg">
+                                  {task.userName.charAt(0).toUpperCase()}
                                 </span>
                               </div>
-                              <p className="text-gray-300 text-sm mb-2">
-                                {task.message}
-                              </p>
-                            </div>
-                            <div
-                              className={`px-3 py-1 rounded-full text-xs font-medium shrink-0 ${
-                                task.success
-                                  ? "bg-green-900/30 text-green-300"
-                                  : "bg-red-900/30 text-red-300"
-                              }`}
-                            >
-                              {task.success ? "Sucesso" : "Erro"}
-                            </div>
+                            )}
                           </div>
 
-                          {/* Detalhes */}
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mt-3 pt-3 border-t border-gray-700/50">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-300">
-                                Automação:
-                              </span>
-                              <span>{task.automationName}</span>
+                          {/* Informações da Tarefa */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-4 mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-white font-semibold">
+                                    {task.userName}
+                                  </span>
+                                  <span className="text-gray-500">•</span>
+                                  <span className="text-gray-400 text-sm">
+                                    {formatDate(task.createdAt)}
+                                  </span>
+                                </div>
+                                <p className="text-gray-300 text-sm mb-2">
+                                  {task.message}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className={`px-3 py-1 rounded-full text-xs font-medium shrink-0 ${
+                                    task.success
+                                      ? "bg-green-900/30 text-green-300"
+                                      : "bg-red-900/30 text-red-300"
+                                  }`}
+                                >
+                                  {task.success ? "Sucesso" : "Erro"}
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteTask(task)}
+                                  className="cursor-pointer p-2 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition-colors"
+                                  title="Excluir tarefa"
+                                >
+                                  <TrashIcon className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-300">
-                                Cliente:
-                              </span>
-                              <span>{task.clientName}</span>
-                            </div>
-                            {task.monthName && (
+
+                            {/* Detalhes */}
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mt-3 pt-3 border-t border-gray-700/50">
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-gray-300">
-                                  Mês:
+                                  Automação:
                                 </span>
-                                <span>{task.monthName}</span>
+                                <span>{task.automationName}</span>
                               </div>
-                            )}
-                            {task.postsCount !== undefined && (
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-gray-300">
-                                  Posts:
+                                  Cliente:
                                 </span>
-                                <span>{task.postsCount}</span>
+                                <span>{task.clientName}</span>
                               </div>
-                            )}
+                              {task.monthName && (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-gray-300">
+                                    Mês:
+                                  </span>
+                                  <span>{task.monthName}</span>
+                                </div>
+                              )}
+                              {task.postsCount !== undefined && (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-gray-300">
+                                    Posts:
+                                  </span>
+                                  <span>{task.postsCount}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+
+                  {/* Paginação */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-700/50">
+                      <div className="text-sm text-gray-400">
+                        Mostrando {startIndex + 1} -{" "}
+                        {Math.min(endIndex, tasks.length)} de {tasks.length}{" "}
+                        tarefas
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() =>
+                            setCurrentPage((prev) => Math.max(1, prev - 1))
+                          }
+                          disabled={currentPage === 1}
+                          className={`cursor-pointer px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                            currentPage === 1
+                              ? "bg-gray-800 text-gray-600 cursor-not-allowed"
+                              : "bg-gray-800 text-white hover:bg-gray-700"
+                          }`}
+                        >
+                          <ChevronLeftIcon className="w-4 h-4" />
+                          Anterior
+                        </button>
+
+                        <div className="flex items-center gap-1">
+                          {Array.from(
+                            { length: totalPages },
+                            (_, i) => i + 1,
+                          ).map((page) => {
+                            // Mostrar apenas algumas páginas ao redor da atual
+                            if (
+                              page === 1 ||
+                              page === totalPages ||
+                              (page >= currentPage - 1 &&
+                                page <= currentPage + 1)
+                            ) {
+                              return (
+                                <button
+                                  key={page}
+                                  onClick={() => setCurrentPage(page)}
+                                  className={`cursor-pointer px-3 py-2 rounded-lg transition-colors ${
+                                    currentPage === page
+                                      ? "bg-red-600 text-white"
+                                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                                  }`}
+                                >
+                                  {page}
+                                </button>
+                              );
+                            } else if (
+                              page === currentPage - 2 ||
+                              page === currentPage + 2
+                            ) {
+                              return (
+                                <span key={page} className="px-2 text-gray-500">
+                                  ...
+                                </span>
+                              );
+                            }
+                            return null;
+                          })}
+                        </div>
+
+                        <button
+                          onClick={() =>
+                            setCurrentPage((prev) =>
+                              Math.min(totalPages, prev + 1),
+                            )
+                          }
+                          disabled={currentPage === totalPages}
+                          className={`cursor-pointer px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                            currentPage === totalPages
+                              ? "bg-gray-800 text-gray-600 cursor-not-allowed"
+                              : "bg-gray-800 text-white hover:bg-gray-700"
+                          }`}
+                        >
+                          Próxima
+                          <ChevronRightIcon className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </div>
         </div>
       </main>
+
+      {/* Modal de Confirmação */}
+      <AlertModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={modalState.onConfirm}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        confirmText={
+          modalState.type === "confirm" || modalState.type === "warning"
+            ? "Confirmar"
+            : "OK"
+        }
+        cancelText="Cancelar"
+        showCancel={
+          modalState.type === "confirm" || modalState.type === "warning"
+        }
+      />
     </div>
   );
 }
