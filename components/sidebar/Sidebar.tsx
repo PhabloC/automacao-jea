@@ -14,11 +14,11 @@ import {
   ShieldIcon,
   UsersIcon,
   CalendarIcon,
+  CheckCircleIcon,
 } from "@/svg";
 import { automationDefinitions } from "@/lib/automations";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProps } from "./types";
-
 
 export default function Sidebar({ className = "" }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -50,12 +50,12 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   };
 
   // Dados do usuário
-  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuário";
+  const userName =
+    user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuário";
   const userEmail = user?.email || "";
   const userAvatar = user?.user_metadata?.avatar_url || "";
 
   const getAutomationIcon = (id: string) => {
-   
     if (id === "calendario") {
       return <CalendarIcon className="w-5 h-5" />;
     }
@@ -158,9 +158,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
             }`}
             title={!isOpen ? automation.title : undefined}
           >
-            <div className="shrink-0">
-              {getAutomationIcon(automation.id)}
-            </div>
+            <div className="shrink-0">{getAutomationIcon(automation.id)}</div>
             {isOpen && (
               <span className="font-medium whitespace-nowrap truncate">
                 {automation.title}
@@ -180,8 +178,22 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           )}
           {!isOpen && <div className="border-t border-red-900/30 mb-2" />}
           <Link
-            href="/permissoes"
+            href="/dashboard/tarefas"
             className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group mt-2 ${
+              isActive("/dashboard/tarefas")
+                ? "bg-red-600 text-white"
+                : "text-gray-400 hover:bg-red-950/50 hover:text-white"
+            }`}
+            title={!isOpen ? "Tarefas" : undefined}
+          >
+            <CheckCircleIcon className="w-5 h-5 shrink-0" />
+            {isOpen && (
+              <span className="font-medium whitespace-nowrap">Tarefas</span>
+            )}
+          </Link>
+          <Link
+            href="/permissoes"
+            className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group ${
               isActive("/permissoes")
                 ? "bg-red-600 text-white"
                 : "text-gray-400 hover:bg-red-950/50 hover:text-white"

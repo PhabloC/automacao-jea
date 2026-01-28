@@ -13,6 +13,7 @@ import {
   fetchN8NStatistics,
   type AutomationData,
 } from "@/lib/automations";
+import { saveTask } from "@/lib/tasks";
 
 export default function CalendarioAutomationPage() {
   const { user, loading: authLoading, hasPermission } = useAuth();
@@ -41,7 +42,7 @@ export default function CalendarioAutomationPage() {
     const loadAutomation = async () => {
       const initialAutomations = createInitialAutomations();
       const calendarioAutomation = initialAutomations.find(
-        (a) => a.id === "calendario"
+        (a) => a.id === "calendario",
       );
       if (calendarioAutomation) {
         setAutomation(calendarioAutomation);
@@ -57,7 +58,7 @@ export default function CalendarioAutomationPage() {
                   lastRun: stats.lastRun,
                   status: stats.status,
                 }
-              : null
+              : null,
           );
         } catch (error) {
           console.error("Erro ao carregar estatísticas:", error);
@@ -73,7 +74,7 @@ export default function CalendarioAutomationPage() {
     monthId: string,
     clientName: string,
     monthName: string,
-    posts: Post[]
+    posts: Post[],
   ) => {
     if (executing) return;
 
@@ -87,7 +88,29 @@ export default function CalendarioAutomationPage() {
         monthName,
         posts,
       });
-      
+
+      // Salvar tarefa criada
+      if (user) {
+        saveTask({
+          automationId: "calendario",
+          automationName: "Calendário",
+          clientId,
+          clientName,
+          monthId,
+          monthName,
+          postsCount: posts.length,
+          userId: user.id,
+          userName:
+            user.user_metadata?.full_name ||
+            user.email?.split("@")[0] ||
+            "Usuário",
+          userEmail: user.email || "",
+          userAvatar: user.user_metadata?.avatar_url,
+          success: result.success,
+          message: result.message,
+        });
+      }
+
       const stats = await fetchN8NStatistics("calendario");
 
       setAutomation((prev) =>
@@ -100,7 +123,7 @@ export default function CalendarioAutomationPage() {
               lastRun: stats.lastRun || result.timestamp,
               status: stats.status,
             }
-          : null
+          : null,
       );
 
       setNotification({
@@ -171,10 +194,7 @@ export default function CalendarioAutomationPage() {
               <h2 className="text-xl font-semibold text-white mb-4">
                 Executar Automação
               </h2>
-              <CalendarForm
-                onExecute={handleExecute}
-                isExecuting={executing}
-              />
+              <CalendarForm onExecute={handleExecute} isExecuting={executing} />
             </div>
           </div>
         </div>
