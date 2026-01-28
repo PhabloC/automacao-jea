@@ -448,7 +448,7 @@ export default function CalendarForm({
             !selectedMonth ||
             posts.length === 0
           }
-          className={`
+          className={` cursor-pointer
             w-full px-6 py-3 rounded-lg font-medium transition-all duration-200 transform
             flex items-center justify-center gap-2
             ${
