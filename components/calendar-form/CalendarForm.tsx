@@ -34,25 +34,36 @@ export default function CalendarForm({
         const savedData = localStorage.getItem(STORAGE_KEY);
         if (savedData) {
           const parsed = JSON.parse(savedData);
-          
+
           // Carregar posts
-          if (parsed.posts && Array.isArray(parsed.posts) && parsed.posts.length > 0) {
+          if (
+            parsed.posts &&
+            Array.isArray(parsed.posts) &&
+            parsed.posts.length > 0
+          ) {
             // Validar estrutura dos posts
             const validPosts = parsed.posts.filter(
-              (p: any) => p && typeof p === "object" && p.id && p.titulo && p.formato
+              (p: any) =>
+                p && typeof p === "object" && p.id && p.titulo && p.formato,
             );
             if (validPosts.length > 0) {
               setPosts(validPosts);
             }
           }
-          
+
           // Carregar cliente selecionado
-          if (parsed.selectedClient && typeof parsed.selectedClient === "string") {
+          if (
+            parsed.selectedClient &&
+            typeof parsed.selectedClient === "string"
+          ) {
             setSelectedClient(parsed.selectedClient);
           }
-          
+
           // Carregar mês selecionado
-          if (parsed.selectedMonth && typeof parsed.selectedMonth === "string") {
+          if (
+            parsed.selectedMonth &&
+            typeof parsed.selectedMonth === "string"
+          ) {
             setSelectedMonth(parsed.selectedMonth);
           }
         }
@@ -72,7 +83,7 @@ export default function CalendarForm({
     if (isInitialLoad.current) {
       return; // Não salvar durante o carregamento inicial
     }
-    
+
     try {
       if (typeof window !== "undefined") {
         const dataToSave = {
@@ -139,9 +150,9 @@ export default function CalendarForm({
       selectedMonth,
       selectedClientName,
       selectedMonthName,
-      posts
+      posts,
     );
-    
+
     // Limpar dados do localStorage após execução bem-sucedida
     try {
       localStorage.removeItem(STORAGE_KEY);
@@ -156,7 +167,7 @@ export default function CalendarForm({
   const handleSavePosts = (newPosts: Post[]) => {
     setPosts(newPosts);
     setErrors((prev) => ({ ...prev, posts: undefined }));
-    
+
     // Salvar imediatamente no localStorage quando posts forem salvos
     try {
       if (typeof window !== "undefined") {
@@ -175,7 +186,7 @@ export default function CalendarForm({
   const handleRemovePost = (postId: string) => {
     const updatedPosts = posts.filter((p) => p.id !== postId);
     setPosts(updatedPosts);
-    
+
     // Salvar imediatamente no localStorage quando post for removido
     try {
       if (typeof window !== "undefined") {
@@ -245,7 +256,8 @@ export default function CalendarForm({
               <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-red-900/50 rounded-lg shadow-lg max-h-60 overflow-auto">
                 {clients.length === 0 ? (
                   <div className="px-4 py-3 text-gray-400 text-sm">
-                    Nenhum cliente cadastrado. Adicione clientes na página de Clientes.
+                    Nenhum cliente cadastrado. Adicione clientes na página de
+                    Clientes.
                   </div>
                 ) : (
                   clients.map((client) => (
@@ -354,8 +366,26 @@ export default function CalendarForm({
                       <span className="text-xs px-2 py-0.5 bg-red-900/30 text-red-300 rounded">
                         {post.formato}
                       </span>
+                      {post.canais && (
+                        <span className="text-xs px-2 py-0.5 bg-blue-900/30 text-blue-300 rounded">
+                          {post.canais}
+                        </span>
+                      )}
                     </div>
                     <p className="text-white font-medium">{post.titulo}</p>
+                    {post.dataPublicacao && (
+                      <p className="text-gray-400 text-xs mt-1">
+                        📅{" "}
+                        {new Date(post.dataPublicacao).toLocaleDateString(
+                          "pt-BR",
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          },
+                        )}
+                      </p>
+                    )}
                     {post.descricao && (
                       <p className="text-gray-400 text-sm mt-1 line-clamp-2">
                         {post.descricao}

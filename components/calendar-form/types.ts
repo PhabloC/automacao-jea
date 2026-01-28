@@ -2,6 +2,8 @@ export interface Post {
   id: string;
   titulo: string;
   formato: string;
+  canais: string;
+  dataPublicacao: string;
   descricao: string;
   referencia: string;
 }
@@ -12,7 +14,7 @@ export interface CalendarFormProps {
     monthId: string,
     clientName: string,
     monthName: string,
-    posts: Post[]
+    posts: Post[],
   ) => Promise<void>;
   isExecuting: boolean;
 }
