@@ -16,9 +16,9 @@ import AlertModal, {
 } from "@/components/alert-modal/AlertModal";
 
 export default function ClientesPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, hasPermission } = useAuth();
   const router = useRouter();
-  
+
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newClientName, setNewClientName] = useState<string>("");
@@ -40,19 +40,21 @@ export default function ClientesPage() {
     message: "",
   });
 
-  // Redirecionar para login se não estiver autenticado
+  // Redirecionar para login ou dashboard se não tiver permissão (mesmo padrão do calendário)
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
+    } else if (!authLoading && !hasPermission) {
+      router.push("/dashboard");
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, hasPermission, router]);
 
-  // Carregar clientes ao montar o componente
+  // Carregar clientes ao montar o componente (apenas com usuário autorizado)
   useEffect(() => {
-    if (user) {
+    if (user && hasPermission) {
       loadClients();
     }
-  }, [user]);
+  }, [user, hasPermission]);
 
   const loadClients = async () => {
     setIsLoading(true);
@@ -68,7 +70,7 @@ export default function ClientesPage() {
 
   // Filtrar clientes baseado na busca
   const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase())
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleAddClient = async (e?: React.FormEvent) => {
@@ -83,7 +85,7 @@ export default function ClientesPage() {
 
     // Verificar se já existe
     const exists = clients.some(
-      (c) => c.name.toLowerCase().trim() === newClientName.toLowerCase().trim()
+      (c) => c.name.toLowerCase().trim() === newClientName.toLowerCase().trim(),
     );
     if (exists) {
       setError("Este cliente já existe");
@@ -109,7 +111,7 @@ export default function ClientesPage() {
 
     try {
       await createClientInWebhook(clientName);
-      
+
       // Recarregar lista de clientes
       const updatedClients = await loadClientsFromWebhook();
       setClients(updatedClients);
@@ -188,7 +190,7 @@ export default function ClientesPage() {
   }
 
   // Não renderizar nada enquanto redireciona
-  if (!user) {
+  if (!user || !hasPermission) {
     return null;
   }
 
@@ -205,9 +207,12 @@ export default function ClientesPage() {
                   <UsersIcon className="w-8 h-8 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-white mb-2">Clientes</h1>
+                  <h1 className="text-3xl font-bold text-white mb-2">
+                    Clientes
+                  </h1>
                   <p className="text-gray-300 text-lg">
-                    Gerencie os clientes cadastrados no sistema. Os clientes adicionados aqui estarão disponíveis em todas as automações.
+                    Gerencie os clientes cadastrados no sistema. Os clientes
+                    adicionados aqui estarão disponíveis em todas as automações.
                   </p>
                 </div>
               </div>
@@ -249,9 +254,7 @@ export default function ClientesPage() {
                   )}
                 </button>
               </form>
-              {error && (
-                <p className="mt-2 text-sm text-red-400">{error}</p>
-              )}
+              {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
             </div>
 
             {/* Lista de Clientes */}
@@ -293,8 +296,12 @@ export default function ClientesPage() {
                           </span>
                         </div>
                         <div>
-                          <p className="text-white font-medium">{client.name}</p>
-                          <p className="text-gray-500 text-sm">ID: {client.id}</p>
+                          <p className="text-white font-medium">
+                            {client.name}
+                          </p>
+                          <p className="text-gray-500 text-sm">
+                            ID: {client.id}
+                          </p>
                         </div>
                       </div>
                       <button
@@ -313,7 +320,9 @@ export default function ClientesPage() {
             {/* Modal de Alerta */}
             <AlertModal
               isOpen={modalState.isOpen}
-              onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))}
+              onClose={() =>
+                setModalState((prev) => ({ ...prev, isOpen: false }))
+              }
               onConfirm={modalState.onConfirm}
               title={modalState.title}
               message={modalState.message}
