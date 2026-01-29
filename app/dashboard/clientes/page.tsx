@@ -268,7 +268,8 @@ export default function ClientesPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Buscar cliente..."
-                  className="px-4 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 w-64"
+                  className="px-4 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2
+                   focus:ring-red-900 focus:border-red-900 w-64"
                 />
               </div>
 
