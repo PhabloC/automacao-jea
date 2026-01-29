@@ -6,7 +6,6 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/sidebar/Sidebar";
 
-
 import {
   UserIcon,
   SpinnerIcon,
@@ -36,19 +35,27 @@ interface ModalState {
 }
 
 export default function PermissoesPage() {
-  const { user, session, loading: authLoading, isAdmin, isLocalhost } = useAuth();
+  const {
+    user,
+    session,
+    loading: authLoading,
+    isAdmin,
+    isLocalhost,
+  } = useAuth();
   const router = useRouter();
 
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"with_permission" | "without_permission">("with_permission");
+  const [activeTab, setActiveTab] = useState<
+    "with_permission" | "without_permission"
+  >("with_permission");
   const [notification, setNotification] = useState<{
     show: boolean;
     message: string;
     type: "success" | "error";
   }>({ show: false, message: "", type: "success" });
-  
+
   // Estado do modal
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
@@ -132,7 +139,10 @@ export default function PermissoesPage() {
   };
 
   // Abrir modal de confirmação
-  const openModal = (type: "delete" | "grant_editor" | "grant_admin", targetUser: UserData) => {
+  const openModal = (
+    type: "delete" | "grant_editor" | "grant_admin",
+    targetUser: UserData,
+  ) => {
     setModal({ isOpen: true, type, user: targetUser });
   };
 
@@ -142,13 +152,16 @@ export default function PermissoesPage() {
   };
 
   // Dar permissão a um usuário
-  const handleGrantPermission = async (targetUser: UserData, role: "admin" | "editor") => {
+  const handleGrantPermission = async (
+    targetUser: UserData,
+    role: "admin" | "editor",
+  ) => {
     if (isLocalhost) {
       showNotification("Permissão concedida (modo desenvolvimento)", "success");
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === targetUser.id ? { ...u, role, has_permission: true } : u
-        )
+          u.id === targetUser.id ? { ...u, role, has_permission: true } : u,
+        ),
       );
       closeModal();
       return;
@@ -174,8 +187,8 @@ export default function PermissoesPage() {
       if (response.ok) {
         setUsers((prev) =>
           prev.map((u) =>
-            u.id === targetUser.id ? { ...u, role, has_permission: true } : u
-          )
+            u.id === targetUser.id ? { ...u, role, has_permission: true } : u,
+          ),
         );
         showNotification("Permissão concedida com sucesso!", "success");
       } else {
@@ -192,14 +205,17 @@ export default function PermissoesPage() {
   };
 
   // Alterar role de um usuário
-  const handleRoleChange = async (userId: string, newRole: "admin" | "editor") => {
+  const handleRoleChange = async (
+    userId: string,
+    newRole: "admin" | "editor",
+  ) => {
     const targetUser = users.find((u) => u.id === userId);
     if (!targetUser) return;
 
     if (isLocalhost) {
       showNotification("Permissão alterada (modo desenvolvimento)", "success");
       setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)),
       );
       return;
     }
@@ -223,7 +239,7 @@ export default function PermissoesPage() {
 
       if (response.ok) {
         setUsers((prev) =>
-          prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+          prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)),
         );
         showNotification("Permissão atualizada com sucesso!", "success");
       } else {
@@ -249,8 +265,8 @@ export default function PermissoesPage() {
       showNotification("Permissão removida (modo desenvolvimento)", "success");
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === userId ? { ...u, role: null, has_permission: false } : u
-        )
+          u.id === userId ? { ...u, role: null, has_permission: false } : u,
+        ),
       );
       return;
     }
@@ -267,8 +283,8 @@ export default function PermissoesPage() {
       if (response.ok) {
         setUsers((prev) =>
           prev.map((u) =>
-            u.id === userId ? { ...u, role: null, has_permission: false } : u
-          )
+            u.id === userId ? { ...u, role: null, has_permission: false } : u,
+          ),
         );
         showNotification("Permissão removida com sucesso!", "success");
       } else {
@@ -342,7 +358,8 @@ export default function PermissoesPage() {
 
   // Configuração do modal baseado no tipo
   const getModalConfig = () => {
-    if (!modal.user) return { title: "", message: "", confirmText: "", type: "info" as const };
+    if (!modal.user)
+      return { title: "", message: "", confirmText: "", type: "info" as const };
 
     const userName = modal.user.full_name || modal.user.email;
 
@@ -369,7 +386,12 @@ export default function PermissoesPage() {
           type: "warning" as const,
         };
       default:
-        return { title: "", message: "", confirmText: "", type: "info" as const };
+        return {
+          title: "",
+          message: "",
+          confirmText: "",
+          type: "info" as const,
+        };
     }
   };
 
@@ -573,7 +595,7 @@ export default function PermissoesPage() {
                           onChange={(e) =>
                             handleRoleChange(
                               u.id,
-                              e.target.value as "admin" | "editor"
+                              e.target.value as "admin" | "editor",
                             )
                           }
                           disabled={saving === u.id || u.id === user?.id}
