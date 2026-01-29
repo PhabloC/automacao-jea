@@ -238,7 +238,7 @@ export default function ClientesPage() {
                 <button
                   type="submit"
                   disabled={isAdding || !newClientName.trim()}
-                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                  className={`cursor-pointer px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
                     isAdding || !newClientName.trim()
                       ? "bg-gray-700 text-gray-400 cursor-not-allowed"
                       : "bg-red-900 hover:bg-red-800 text-white"
@@ -306,7 +306,7 @@ export default function ClientesPage() {
                       </div>
                       <button
                         onClick={() => handleRemoveClient(client.id)}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition-colors"
+                        className="cursor-pointer p-2 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition-colors"
                         title="Remover cliente"
                       >
                         <TrashIcon className="w-5 h-5" />
