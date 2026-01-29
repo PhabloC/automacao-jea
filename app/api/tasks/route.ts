@@ -181,34 +181,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabaseAdmin
+    const insertPayload = {
+      automation_id: automationId,
+      automation_name: automationName,
+      client_id: clientId,
+      client_name: clientName,
+      month_id: monthId ?? null,
+      month_name: monthName ?? null,
+      posts_count: postsCount ?? null,
+      posts: Array.isArray(posts) ? posts : null,
+      user_id: userId,
+      user_name: userName,
+      user_email: userEmail,
+      user_avatar: userAvatar ?? null,
+      success,
+      message,
+    };
+
+    let result = await supabaseAdmin
       .from("automation_tasks")
-      .insert({
-        automation_id: automationId,
-        automation_name: automationName,
-        client_id: clientId,
-        client_name: clientName,
-        month_id: monthId ?? null,
-        month_name: monthName ?? null,
-        posts_count: postsCount ?? null,
-        posts: Array.isArray(posts) ? posts : null,
-        user_id: userId,
-        user_name: userName,
-        user_email: userEmail,
-        user_avatar: userAvatar ?? null,
-        success,
-        message,
-      })
+      .insert(insertPayload)
       .select("id, created_at")
       .single();
 
-    if (error) {
-      console.error("[API Tasks] Erro ao criar tarefa:", error);
+    // Fallback: se a coluna "posts" não existir no banco (produção antiga), tenta sem ela
+    if (result.error) {
+      const errMsg = String(result.error.message || "").toLowerCase();
+      const isPostsColumnError =
+        errMsg.includes("posts") ||
+        errMsg.includes("column") ||
+        errMsg.includes("does not exist");
+
+      if (isPostsColumnError) {
+        const { posts: _posts, ...payloadWithoutPosts } = insertPayload;
+        result = await supabaseAdmin
+          .from("automation_tasks")
+          .insert(payloadWithoutPosts)
+          .select("id, created_at")
+          .single();
+      }
+    }
+
+    if (result.error) {
+      console.error("[API Tasks] Erro ao criar tarefa:", result.error);
       return NextResponse.json(
         { error: "Erro ao criar tarefa" },
         { status: 500 },
       );
     }
+
+    const data = result.data;
 
     const row = data as { id: string; created_at: string };
     return NextResponse.json({
