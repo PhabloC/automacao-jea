@@ -105,6 +105,15 @@ export default function CalendarioAutomationPage() {
           monthId,
           monthName,
           postsCount: posts.length,
+          posts: posts.map((p) => ({
+            id: p.id,
+            titulo: p.titulo,
+            formato: p.formato,
+            canais: p.canais,
+            dataPublicacao: p.dataPublicacao,
+            descricao: p.descricao,
+            referencia: p.referencia,
+          })),
           userId: user.id,
           userName:
             user.user_metadata?.full_name ||

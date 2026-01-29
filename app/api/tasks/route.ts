@@ -6,6 +6,16 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
+type TaskPostRow = {
+  id: string;
+  titulo: string;
+  formato: string;
+  canais: string;
+  dataPublicacao: string;
+  descricao: string;
+  referencia: string;
+};
+
 type TaskRow = {
   id: string;
   automation_id: string;
@@ -15,6 +25,7 @@ type TaskRow = {
   month_id: string | null;
   month_name: string | null;
   posts_count: number | null;
+  posts: TaskPostRow[] | null;
   user_id: string;
   user_name: string;
   user_email: string;
@@ -33,6 +44,7 @@ const mapRowToTask = (row: TaskRow) => ({
   monthId: row.month_id ?? undefined,
   monthName: row.month_name ?? undefined,
   postsCount: row.posts_count ?? undefined,
+  posts: Array.isArray(row.posts) ? row.posts : undefined,
   userId: row.user_id,
   userName: row.user_name,
   userEmail: row.user_email,
@@ -143,6 +155,7 @@ export async function POST(request: NextRequest) {
       monthId,
       monthName,
       postsCount,
+      posts,
       userId,
       userName,
       userEmail,
@@ -178,6 +191,7 @@ export async function POST(request: NextRequest) {
         month_id: monthId ?? null,
         month_name: monthName ?? null,
         posts_count: postsCount ?? null,
+        posts: Array.isArray(posts) ? posts : null,
         user_id: userId,
         user_name: userName,
         user_email: userEmail,

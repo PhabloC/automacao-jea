@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS automation_tasks (
   month_id TEXT,
   month_name TEXT,
   posts_count INTEGER,
+  posts JSONB,
   user_id TEXT NOT NULL,
   user_name TEXT NOT NULL,
   user_email TEXT NOT NULL,
@@ -104,6 +105,9 @@ CREATE TABLE IF NOT EXISTS automation_tasks (
   message TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Se a tabela já existir, adicione a coluna posts (execute apenas se necessário):
+-- ALTER TABLE automation_tasks ADD COLUMN IF NOT EXISTS posts JSONB;
 
 CREATE INDEX idx_automation_tasks_created_at ON automation_tasks(created_at DESC);
 CREATE INDEX idx_automation_tasks_user_id ON automation_tasks(user_id);

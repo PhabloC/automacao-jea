@@ -1,3 +1,14 @@
+// Interface para posts do calendário (armazenados na tarefa)
+export interface TaskPost {
+  id: string;
+  titulo: string;
+  formato: string;
+  canais: string;
+  dataPublicacao: string;
+  descricao: string;
+  referencia: string;
+}
+
 // Interface para tarefas criadas
 export interface Task {
   id: string;
@@ -8,6 +19,7 @@ export interface Task {
   monthId?: string;
   monthName?: string;
   postsCount?: number;
+  posts?: TaskPost[];
   userId: string;
   userName: string;
   userEmail: string;

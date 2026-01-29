@@ -11,6 +11,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@/svg";
+import type { TaskPost } from "@/lib/tasks";
 import {
   getTasks,
   deleteTask,
@@ -35,6 +36,7 @@ export default function TarefasPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const tasksPerPage = 4;
 
   // Estados do modal
@@ -86,7 +88,12 @@ export default function TarefasPage() {
     }
   };
 
-  const handleDeleteTask = (task: Task) => {
+  const handleToggleTask = (taskId: string) => {
+    setExpandedTaskId((prev) => (prev === taskId ? null : taskId));
+  };
+
+  const handleDeleteTask = (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
     setModalState({
       isOpen: true,
       type: "warning",
@@ -215,107 +222,229 @@ export default function TarefasPage() {
               ) : (
                 <>
                   <div className="space-y-3">
-                    {currentTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className={`p-4 rounded-lg border transition-colors ${
-                          task.success
-                            ? "bg-gray-800/50 border-green-900/30"
-                            : "bg-gray-800/50 border-red-900/30"
-                        }`}
-                      >
-                        <div className="flex items-start gap-4">
-                          {/* Avatar do Usuário */}
-                          <div className="shrink-0">
-                            {task.userAvatar ? (
-                              <Image
-                                src={task.userAvatar}
-                                alt={task.userName}
-                                width={48}
-                                height={48}
-                                className="rounded-full"
+                    {currentTasks.map((task) => {
+                      const isExpanded = expandedTaskId === task.id;
+                      const hasPosts =
+                        task.posts &&
+                        Array.isArray(task.posts) &&
+                        task.posts.length > 0;
+
+                      return (
+                        <div
+                          key={task.id}
+                          className={`rounded-lg border transition-colors overflow-hidden ${
+                            task.success
+                              ? "bg-gray-800/50 border-green-900/30"
+                              : "bg-gray-800/50 border-red-900/30"
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleToggleTask(task.id)}
+                            className="w-full p-4 text-left cursor-pointer hover:bg-gray-800/70 transition-colors flex items-start gap-4"
+                            aria-expanded={isExpanded}
+                            aria-label={
+                              isExpanded
+                                ? `Recolher detalhes da tarefa de ${task.userName}`
+                                : `Expandir detalhes da tarefa de ${task.userName}`
+                            }
+                          >
+                            {/* Ícone de expandir/recolher */}
+                            <div className="shrink-0 pt-1">
+                              <ChevronRightIcon
+                                className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                                  isExpanded ? "rotate-90" : ""
+                                }`}
                               />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
-                                <span className="text-white font-semibold text-lg">
-                                  {task.userName.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                            </div>
 
-                          {/* Informações da Tarefa */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-4 mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-white font-semibold">
-                                    {task.userName}
-                                  </span>
-                                  <span className="text-gray-500">•</span>
-                                  <span className="text-gray-400 text-sm">
-                                    {formatDate(task.createdAt)}
+                            {/* Avatar do Usuário */}
+                            <div className="shrink-0">
+                              {task.userAvatar ? (
+                                <Image
+                                  src={task.userAvatar}
+                                  alt={task.userName}
+                                  width={48}
+                                  height={48}
+                                  className="rounded-full"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
+                                  <span className="text-white font-semibold text-lg">
+                                    {task.userName.charAt(0).toUpperCase()}
                                   </span>
                                 </div>
-                                <p className="text-gray-300 text-sm mb-2">
-                                  {task.message}
+                              )}
+                            </div>
+
+                            {/* Informações da Tarefa */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-4 mb-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-white font-semibold">
+                                      {task.userName}
+                                    </span>
+                                    <span className="text-gray-500">•</span>
+                                    <span className="text-gray-400 text-sm">
+                                      {formatDate(task.createdAt)}
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-300 text-sm mb-2">
+                                    {task.message}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className={`px-3 py-1 rounded-full text-xs font-medium shrink-0 ${
+                                      task.success
+                                        ? "bg-green-900/30 text-green-300"
+                                        : "bg-red-900/30 text-red-300"
+                                    }`}
+                                  >
+                                    {task.success ? "Sucesso" : "Erro"}
+                                  </div>
+                                  <button
+                                    onClick={(e) => handleDeleteTask(task, e)}
+                                    className="cursor-pointer p-2 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition-colors"
+                                    title="Excluir tarefa"
+                                    aria-label="Excluir tarefa"
+                                  >
+                                    <TrashIcon className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Detalhes */}
+                              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mt-3 pt-3 border-t border-gray-700/50">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-gray-300">
+                                    Automação:
+                                  </span>
+                                  <span>{task.automationName}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-gray-300">
+                                    Cliente:
+                                  </span>
+                                  <span>{task.clientName}</span>
+                                </div>
+                                {task.monthName && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-gray-300">
+                                      Mês:
+                                    </span>
+                                    <span>{task.monthName}</span>
+                                  </div>
+                                )}
+                                {task.postsCount !== undefined && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-gray-300">
+                                      Posts:
+                                    </span>
+                                    <span>{task.postsCount}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+
+                          {/* Área expandida com posts */}
+                          {isExpanded && (
+                            <div className="border-t border-gray-700/50 bg-gray-900/50 px-4 py-4">
+                              {hasPosts ? (
+                                <div className="space-y-4">
+                                  <h3 className="text-sm font-semibold text-gray-300 mb-3">
+                                    Posts da tarefa
+                                  </h3>
+                                  <div className="space-y-3">
+                                    {task.posts!.map(
+                                      (post: TaskPost, index: number) => (
+                                        <div
+                                          key={post.id}
+                                          className="p-4 rounded-lg bg-gray-800/70 border border-gray-700/50"
+                                        >
+                                          <div className="flex items-center gap-2 mb-3">
+                                            <span className="text-xs font-medium text-red-400">
+                                              Post {index + 1}
+                                            </span>
+                                            {post.formato && (
+                                              <span className="text-xs px-2 py-0.5 bg-red-900/30 text-red-300 rounded">
+                                                {post.formato}
+                                              </span>
+                                            )}
+                                            {post.canais && (
+                                              <span className="text-xs px-2 py-0.5 bg-blue-900/30 text-blue-300 rounded">
+                                                {post.canais}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="grid gap-2 text-sm">
+                                            {post.titulo && (
+                                              <div>
+                                                <span className="font-medium text-gray-400">
+                                                  Título:
+                                                </span>
+                                                <span className="text-white ml-2">
+                                                  {post.titulo}
+                                                </span>
+                                              </div>
+                                            )}
+                                            {post.dataPublicacao && (
+                                              <div>
+                                                <span className="font-medium text-gray-400">
+                                                  Data de Publicação:
+                                                </span>
+                                                <span className="text-white ml-2">
+                                                  {new Date(
+                                                    post.dataPublicacao,
+                                                  ).toLocaleDateString(
+                                                    "pt-BR",
+                                                    {
+                                                      day: "2-digit",
+                                                      month: "2-digit",
+                                                      year: "numeric",
+                                                    },
+                                                  )}
+                                                </span>
+                                              </div>
+                                            )}
+                                            {post.descricao && (
+                                              <div>
+                                                <span className="font-medium text-gray-400">
+                                                  Descrição:
+                                                </span>
+                                                <p className="text-white mt-1 whitespace-pre-wrap">
+                                                  {post.descricao}
+                                                </p>
+                                              </div>
+                                            )}
+                                            {post.referencia && (
+                                              <div>
+                                                <span className="font-medium text-gray-400">
+                                                  Referência:
+                                                </span>
+                                                <span className="text-white ml-2 break-all">
+                                                  {post.referencia}
+                                                </span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ),
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-gray-500 text-sm">
+                                  Posts não disponíveis para esta tarefa.
                                 </p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className={`px-3 py-1 rounded-full text-xs font-medium shrink-0 ${
-                                    task.success
-                                      ? "bg-green-900/30 text-green-300"
-                                      : "bg-red-900/30 text-red-300"
-                                  }`}
-                                >
-                                  {task.success ? "Sucesso" : "Erro"}
-                                </div>
-                                <button
-                                  onClick={() => handleDeleteTask(task)}
-                                  className="cursor-pointer p-2 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition-colors"
-                                  title="Excluir tarefa"
-                                >
-                                  <TrashIcon className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Detalhes */}
-                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mt-3 pt-3 border-t border-gray-700/50">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-gray-300">
-                                  Automação:
-                                </span>
-                                <span>{task.automationName}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-gray-300">
-                                  Cliente:
-                                </span>
-                                <span>{task.clientName}</span>
-                              </div>
-                              {task.monthName && (
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-gray-300">
-                                    Mês:
-                                  </span>
-                                  <span>{task.monthName}</span>
-                                </div>
-                              )}
-                              {task.postsCount !== undefined && (
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-gray-300">
-                                    Posts:
-                                  </span>
-                                  <span>{task.postsCount}</span>
-                                </div>
                               )}
                             </div>
-                          </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Paginação */}
