@@ -15,7 +15,7 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       await signInWithGoogle();
     } catch (err) {
@@ -34,9 +34,9 @@ export default function LoginPage() {
         {/* Logo and Title */}
         <div className="text-center mb-10">
           <div className="flex justify-center mb-6">
-            <img 
-              src="/logo.png" 
-              alt="J&A Logo" 
+            <img
+              src="/logo.png"
+              alt="J&A Logo"
               className="h-14 w-auto drop-shadow-[0_0_30px_rgba(220,38,38,0.3)]"
             />
           </div>
@@ -96,13 +96,13 @@ export default function LoginPage() {
                 <span>Entrar com Google</span>
               </>
             )}
-            
+
             {/* Hover glow effect */}
             <div className="absolute inset-0 rounded-xl bg-linear-to-r from-red-500/0 via-red-500/10 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           </button>
 
           {/* Terms */}
-         {/*  <p className="mt-6 text-center text-xs text-gray-600">
+          {/*  <p className="mt-6 text-center text-xs text-gray-600">
             Ao continuar, você concorda com nossos{" "}
             <a href="#" className="text-red-400 hover:text-red-300 transition-colors">
               Termos de Serviço

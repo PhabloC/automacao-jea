@@ -5,17 +5,12 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/sidebar/Sidebar";
-import {
-  UserIcon,
-  SpinnerIcon,
-  CheckIcon,
-  CloseIcon,
-} from "@/svg";
+import { UserIcon, SpinnerIcon, CheckIcon, CloseIcon } from "@/svg";
 
 export default function PerfilPage() {
   const { user, loading: authLoading, isLocalhost } = useAuth();
   const router = useRouter();
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -126,9 +121,7 @@ export default function PerfilPage() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Meu Perfil</h1>
-            <p className="text-gray-400">
-              Gerencie suas informações pessoais
-            </p>
+            <p className="text-gray-400">Gerencie suas informações pessoais</p>
           </div>
 
           {/* Profile Card */}
@@ -151,8 +144,8 @@ export default function PerfilPage() {
                 )}
               </div>
               <p className="text-sm text-gray-400">
-                {userProvider === "google" 
-                  ? "Foto sincronizada com Google" 
+                {userProvider === "google"
+                  ? "Foto sincronizada com Google"
                   : "Avatar padrão"}
               </p>
             </div>

@@ -20,7 +20,6 @@ export default function DashboardPage() {
   }, [user, authLoading, router]);
 
   const getAutomationIcon = (id: string) => {
-   
     if (id === "calendario") {
       return <CalendarIcon className="w-6 h-6" />;
     }

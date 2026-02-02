@@ -20,8 +20,13 @@ export default function Header() {
   };
 
   // Obter informações do usuário
-  const userPhoto = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
-  const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Usuário";
+  const userPhoto =
+    user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const userName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "Usuário";
   const userEmail = user?.email;
 
   return (
