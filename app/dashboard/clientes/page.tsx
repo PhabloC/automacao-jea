@@ -7,6 +7,7 @@ import {
   loadClientsFromWebhook,
   createClientInWebhook,
   deleteClientInWebhook,
+  getClients,
   type Client,
 } from "@/lib/clients";
 import Sidebar from "@/components/sidebar/Sidebar";
@@ -19,7 +20,8 @@ export default function ClientesPage() {
   const { user, loading: authLoading, hasPermission } = useAuth();
   const router = useRouter();
 
-  const [clients, setClients] = useState<Client[]>([]);
+  // Inicializa com dados em cache (localStorage) para exibir imediatamente no F5
+  const [clients, setClients] = useState<Client[]>(() => getClients());
   const [isLoading, setIsLoading] = useState(true);
   const [newClientName, setNewClientName] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -260,9 +262,17 @@ export default function ClientesPage() {
             {/* Lista de Clientes */}
             <div className="bg-gray-900/50 rounded-xl shadow-sm border border-red-900/30 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-white">
-                  Clientes Cadastrados ({clients.length})
-                </h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-semibold text-white">
+                    Clientes Cadastrados ({clients.length})
+                  </h2>
+                  {isLoading && clients.length > 0 && (
+                    <span className="flex items-center gap-1.5 text-sm text-gray-400">
+                      <SpinnerIcon className="w-4 h-4 animate-spin" />
+                      Atualizando...
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={searchTerm}
@@ -273,9 +283,10 @@ export default function ClientesPage() {
                 />
               </div>
 
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <SpinnerIcon className="w-8 h-8 text-red-500" />
+              {isLoading && clients.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <SpinnerIcon className="w-8 h-8 text-red-500 animate-spin" />
+                  <p className="text-gray-400">Carregando clientes...</p>
                 </div>
               ) : filteredClients.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
