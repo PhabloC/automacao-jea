@@ -22,7 +22,6 @@ export const automationDefinitions: Omit<
   AutomationData,
   "executionCount" | "successCount" | "errorCount" | "status" | "lastRun"
 >[] = [
- 
   {
     id: "calendario",
     title: "Calendário",
@@ -70,7 +69,12 @@ export async function executeAutomation(
   });
 
   // Para Calendário, faz chamada real ao webhook do n8n
-  if (automationId === "calendario" && params?.clientId && params?.monthId && params?.posts) {
+  if (
+    automationId === "calendario" &&
+    params?.clientId &&
+    params?.monthId &&
+    params?.posts
+  ) {
     const webhookUrl = N8N_WEBHOOKS.calendario;
 
     if (!webhookUrl) {
@@ -82,6 +86,12 @@ export async function executeAutomation(
     }
 
     try {
+      // Adiciona número (1, 2, 3...) em cada post para uso no loop do n8n (ex: pasta /1, /2, /3)
+      const postsWithNumero = params.posts.map((post, index) => ({
+        ...post,
+        numero: index + 1,
+      }));
+
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
@@ -92,7 +102,9 @@ export async function executeAutomation(
           monthId: params.monthId,
           clientName: params.clientName,
           monthName: params.monthName,
-          posts: params.posts,
+          posts: postsWithNumero,
+          postsCount: params.posts.length,
+          quantidadeDePosts: params.posts.length,
         }),
       });
 
@@ -113,7 +125,11 @@ export async function executeAutomation(
       const message =
         data?.message ||
         (success
-          ? `${postsCount} tarefa${postsCount > 1 ? "s" : ""} criada${postsCount > 1 ? "s" : ""} com sucesso no calendário para ${params.clientName} - ${params.monthName}!`
+          ? `${postsCount} tarefa${postsCount > 1 ? "s" : ""} criada${
+              postsCount > 1 ? "s" : ""
+            } com sucesso no calendário para ${params.clientName} - ${
+              params.monthName
+            }!`
           : `Erro ao criar tarefas no calendário para ${params.clientName} - ${params.monthName}. Tente novamente.`);
 
       return {
