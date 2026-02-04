@@ -99,17 +99,17 @@ export default function PostModal({
   const handlePostChange = (
     postId: string,
     field: keyof PostFormData,
-    value: string,
+    value: string
   ) => {
     setPosts(
-      posts.map((p) => (p.id === postId ? { ...p, [field]: value } : p)),
+      posts.map((p) => (p.id === postId ? { ...p, [field]: value } : p))
     );
   };
 
   const handleSave = () => {
     // Validar se pelo menos um post está preenchido
     const validPosts = posts.filter(
-      (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim(),
+      (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim()
     );
 
     if (validPosts.length === 0) {
@@ -120,18 +120,14 @@ export default function PostModal({
     onClose();
   };
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="post-modal-title"
     >
       <div
         ref={modalRef}
@@ -140,7 +136,12 @@ export default function PostModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-red-900/30">
-          <h2 className="text-xl font-semibold text-white">Adicionar Posts</h2>
+          <h2
+            id="post-modal-title"
+            className="text-xl font-semibold text-white"
+          >
+            Adicionar Posts
+          </h2>
           <button
             onClick={onClose}
             className="cursor-pointer p-1 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
@@ -277,7 +278,7 @@ export default function PostModal({
                           handlePostChange(
                             post.id,
                             "dataPublicacao",
-                            e.target.value,
+                            e.target.value
                           )
                         }
                         className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900"
@@ -312,7 +313,7 @@ export default function PostModal({
                           handlePostChange(
                             post.id,
                             "referencia",
-                            e.target.value,
+                            e.target.value
                           )
                         }
                         placeholder="Link ou referência do post"
@@ -362,12 +363,12 @@ export default function PostModal({
               onClick={handleSave}
               disabled={
                 !posts.some(
-                  (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim(),
+                  (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim()
                 )
               }
               className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-medium ${
                 posts.some(
-                  (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim(),
+                  (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim()
                 )
                   ? "bg-red-900 hover:bg-red-800 text-white"
                   : "bg-gray-700 text-gray-400 cursor-not-allowed"
