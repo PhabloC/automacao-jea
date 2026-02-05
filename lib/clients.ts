@@ -240,7 +240,7 @@ export async function updateClientInWebhook(
     }
     return {
       id: clientId,
-      name: clientName.trim(),
+      name,
     };
   } catch (error) {
     console.error("Erro ao editar cliente no webhook:", error);
