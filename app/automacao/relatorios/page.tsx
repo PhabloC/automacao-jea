@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/sidebar/Sidebar";
@@ -72,8 +73,12 @@ export default function RelatoriosPage() {
   const [formError, setFormError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Dropdown ações
+  // Dropdown ações (portal para evitar overlay capturar clique)
   const [dropdownClientId, setDropdownClientId] = useState<number | null>(null);
+  const [dropdownAnchor, setDropdownAnchor] = useState<{
+    top: number;
+    right: number;
+  } | null>(null);
 
   // Modal confirmar exclusão
   const [deleteModal, setDeleteModal] = useState<{
@@ -179,6 +184,7 @@ export default function RelatoriosPage() {
 
   const handleOpenEdit = (client: RelatorioCliente) => {
     setDropdownClientId(null);
+    setDropdownAnchor(null);
     setFormData({
       nome: client.nome,
       email: client.email,
@@ -268,6 +274,7 @@ export default function RelatoriosPage() {
 
   const handleOpenDelete = (client: RelatorioCliente) => {
     setDropdownClientId(null);
+    setDropdownAnchor(null);
     setDeleteModal({ open: true, client });
   };
 
@@ -291,6 +298,7 @@ export default function RelatoriosPage() {
 
   const handleOpenConfig = (client: RelatorioCliente) => {
     setDropdownClientId(null);
+    setDropdownAnchor(null);
     setConfigMessages({
       meta: client.mensagem_meta || "",
       google: client.mensagem_google || "",
@@ -572,51 +580,27 @@ export default function RelatoriosPage() {
                           <td className="px-4 py-3 text-right relative">
                             <button
                               type="button"
-                              onClick={() =>
-                                setDropdownClientId((id) =>
-                                  id === client.id ? null : client.id
-                                )
-                              }
+                              onClick={(e) => {
+                                const rect =
+                                  e.currentTarget.getBoundingClientRect();
+                                const isClosing =
+                                  dropdownClientId === client.id;
+                                if (isClosing) {
+                                  setDropdownAnchor(null);
+                                  setDropdownClientId(null);
+                                } else {
+                                  setDropdownAnchor({
+                                    top: rect.bottom + 4,
+                                    right: window.innerWidth - rect.right,
+                                  });
+                                  setDropdownClientId(client.id);
+                                }
+                              }}
                               className="cursor-pointer p-2 text-gray-400 hover:text-white hover:bg-red-900/30 rounded-lg"
                               aria-label="Ações"
                             >
                               <span className="text-lg leading-none">⋮</span>
                             </button>
-                            {dropdownClientId === client.id && (
-                              <>
-                                <div
-                                  className="fixed inset-0 z-40"
-                                  onClick={() => setDropdownClientId(null)}
-                                  aria-hidden="true"
-                                />
-                                <div className="absolute right-0 top-full mt-1 z-50 bg-gray-900 border border-red-900/30 rounded-lg shadow-lg py-1 min-w-[160px]">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenEdit(client)}
-                                    className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-red-950/50 hover:text-white"
-                                  >
-                                    <EditIcon className="w-4 h-4" />
-                                    Editar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenConfig(client)}
-                                    className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-red-950/50 hover:text-white"
-                                  >
-                                    <span className="w-4 h-4">⚙</span>
-                                    Configuração
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenDelete(client)}
-                                    className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-950/50"
-                                  >
-                                    <TrashIcon className="w-4 h-4" />
-                                    Excluir
-                                  </button>
-                                </div>
-                              </>
-                            )}
                           </td>
                         </tr>
                       ))
@@ -628,6 +612,61 @@ export default function RelatoriosPage() {
           </div>
         </div>
       </main>
+
+      {/* Dropdown de ações em portal (evita overlay capturar clique em Configuração) */}
+      {typeof document !== "undefined" &&
+        dropdownClientId !== null &&
+        dropdownAnchor !== null &&
+        (() => {
+          const client = filteredClients.find((c) => c.id === dropdownClientId);
+          if (!client) return null;
+          return createPortal(
+            <>
+              <div
+                className="fixed inset-0 z-[9998]"
+                onClick={() => {
+                  setDropdownAnchor(null);
+                  setDropdownClientId(null);
+                }}
+                aria-hidden="true"
+              />
+              <div
+                className="fixed z-[9999] bg-gray-900 border border-red-900/30 rounded-lg shadow-lg py-1 min-w-[160px]"
+                style={{
+                  top: dropdownAnchor.top,
+                  right: dropdownAnchor.right,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleOpenEdit(client)}
+                  className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-red-950/50 hover:text-white"
+                >
+                  <EditIcon className="w-4 h-4" />
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenConfig(client)}
+                  className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-red-950/50 hover:text-white"
+                >
+                  <span className="w-4 h-4">⚙</span>
+                  Configuração
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenDelete(client)}
+                  className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-950/50"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                  Excluir
+                </button>
+              </div>
+            </>,
+            document.body
+          );
+        })()}
 
       {/* Toast */}
       {toast.show && (
