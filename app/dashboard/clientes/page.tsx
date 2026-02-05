@@ -6,12 +6,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   loadClientsFromWebhook,
   createClientInWebhook,
+  updateClientInWebhook,
   deleteClientInWebhook,
   getClients,
   type Client,
 } from "@/lib/clients";
 import Sidebar from "@/components/sidebar/Sidebar";
-import { SpinnerIcon, TrashIcon, UsersIcon } from "@/svg";
+import { CloseIcon, EditIcon, SpinnerIcon, TrashIcon, UsersIcon } from "@/svg";
 import AlertModal, {
   type AlertModalType,
 } from "@/components/alert-modal/AlertModal";
@@ -27,6 +28,12 @@ export default function ClientesPage() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string>("");
+
+  // Estados da edição
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [editName, setEditName] = useState<string>("");
+  const [editError, setEditError] = useState<string>("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Estados do modal
   const [modalState, setModalState] = useState<{
@@ -152,6 +159,61 @@ export default function ClientesPage() {
         await executeDeleteClient(clientId, clientName);
       },
     });
+  };
+
+  const handleOpenEdit = (client: Client) => {
+    setEditingClient(client);
+    setEditName(client.name);
+    setEditError("");
+  };
+
+  const handleCloseEdit = () => {
+    if (!isSavingEdit) {
+      setEditingClient(null);
+      setEditName("");
+      setEditError("");
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingClient) return;
+
+    const trimmedName = editName.trim();
+    if (!trimmedName) {
+      setEditError("Por favor, insira um nome para o cliente");
+      return;
+    }
+
+    const exists = clients.some(
+      (c) =>
+        c.id !== editingClient.id &&
+        c.name.toLowerCase().trim() === trimmedName.toLowerCase()
+    );
+    if (exists) {
+      setEditError("Já existe um cliente com esse nome");
+      return;
+    }
+
+    setIsSavingEdit(true);
+    setEditError("");
+
+    try {
+      await updateClientInWebhook(editingClient.id, trimmedName);
+      const updatedClients = await loadClientsFromWebhook();
+      setClients(updatedClients);
+      handleCloseEdit();
+      setModalState({
+        isOpen: true,
+        type: "success",
+        title: "Cliente Atualizado",
+        message: `O cliente foi atualizado para "${trimmedName}" com sucesso!`,
+      });
+    } catch (err) {
+      console.error("Erro ao editar cliente:", err);
+      setEditError("Erro ao editar cliente. Tente novamente.");
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
   const executeDeleteClient = async (clientId: string, clientName: string) => {
@@ -316,18 +378,124 @@ export default function ClientesPage() {
                           </p>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleRemoveClient(client.id)}
-                        className="cursor-pointer p-2 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition-colors"
-                        title="Remover cliente"
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(client)}
+                          className="cursor-pointer p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                          title="Editar cliente"
+                          aria-label="Editar cliente"
+                        >
+                          <EditIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveClient(client.id)}
+                          className="cursor-pointer p-2 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition-colors"
+                          title="Remover cliente"
+                          aria-label="Remover cliente"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
+
+            {/* Modal de Edição de Cliente */}
+            {editingClient && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                onClick={(e) =>
+                  e.target === e.currentTarget && handleCloseEdit()
+                }
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="edit-client-title"
+              >
+                <div
+                  className="bg-gray-900 border border-red-900/30 rounded-xl shadow-2xl w-full max-w-md mx-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                    <h2
+                      id="edit-client-title"
+                      className="text-lg font-semibold text-white"
+                    >
+                      Editar Cliente
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={handleCloseEdit}
+                      disabled={isSavingEdit}
+                      className="cursor-pointer p-1 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+                      aria-label="Fechar"
+                    >
+                      <CloseIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <label
+                      htmlFor="edit-client-name"
+                      className="block text-sm font-medium text-gray-300"
+                    >
+                      Nome do cliente
+                    </label>
+                    <input
+                      id="edit-client-name"
+                      type="text"
+                      value={editName}
+                      onChange={(e) => {
+                        setEditName(e.target.value);
+                        setEditError("");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveEdit();
+                        if (e.key === "Escape") handleCloseEdit();
+                      }}
+                      disabled={isSavingEdit}
+                      className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                      placeholder="Nome do cliente"
+                      autoFocus
+                    />
+                    {editError && (
+                      <p className="text-sm text-red-400">{editError}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-800">
+                    <button
+                      type="button"
+                      onClick={handleCloseEdit}
+                      disabled={isSavingEdit}
+                      className="cursor-pointer px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveEdit}
+                      disabled={isSavingEdit || !editName.trim()}
+                      className={`cursor-pointer px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                        isSavingEdit || !editName.trim()
+                          ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                          : "bg-red-900 hover:bg-red-800 text-white"
+                      }`}
+                    >
+                      {isSavingEdit ? (
+                        <>
+                          <SpinnerIcon className="w-4 h-4 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        "Salvar"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Modal de Alerta */}
             <AlertModal

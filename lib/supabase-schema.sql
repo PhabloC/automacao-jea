@@ -122,6 +122,37 @@ CREATE POLICY "No direct access to automation_tasks" ON automation_tasks
   FOR ALL USING (false);
 
 -- =====================================================
+-- TABELA RELATÓRIOS_CLIENTES (automação Relatórios / Malbs Clients)
+-- Usada pela página /automacao/relatorios para configurar clientes,
+-- dias de envio, período e mensagens Meta/Google com tags.
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS relatorios_clientes (
+  id BIGSERIAL PRIMARY KEY,
+  nome TEXT NOT NULL,
+  email TEXT NOT NULL,
+  telefone TEXT NOT NULL,
+  conta_anuncio_meta TEXT,
+  conta_anuncio_google TEXT,
+  dias_envio INTEGER[] NOT NULL DEFAULT '{}',
+  quantidade_dias_relatorio INTEGER NOT NULL DEFAULT 7 CHECK (quantidade_dias_relatorio IN (1, 7, 15, 30)),
+  campanha_meta BOOLEAN NOT NULL DEFAULT false,
+  saldo_meta BOOLEAN NOT NULL DEFAULT false,
+  campanha_google BOOLEAN NOT NULL DEFAULT false,
+  mensagem_meta TEXT,
+  mensagem_google TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_relatorios_clientes_nome ON relatorios_clientes(nome);
+
+ALTER TABLE relatorios_clientes ENABLE ROW LEVEL SECURITY;
+
+-- Acesso apenas via API (service role); clientes não acessam direto.
+CREATE POLICY "No direct access to relatorios_clientes" ON relatorios_clientes
+  FOR ALL USING (false);
+
+-- =====================================================
 -- IMPORTANTE: Após criar a tabela, insira o primeiro admin manualmente
 -- Substitua 'SEU_USER_ID' pelo ID do usuário que será o primeiro admin
 -- =====================================================

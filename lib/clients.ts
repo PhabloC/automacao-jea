@@ -167,6 +167,49 @@ export async function createClientInWebhook(
   }
 }
 
+// Função para editar um cliente no webhook n8n
+export async function updateClientInWebhook(
+  clientId: string,
+  clientName: string
+): Promise<Client | null> {
+  try {
+    const idNumber = parseInt(clientId, 10);
+    if (isNaN(idNumber) || idNumber <= 0) {
+      throw new Error(`ID inválido para edição: ${clientId}`);
+    }
+
+    const response = await fetch("/api/clients/editar", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: idNumber,
+        clientes: clientName.trim(),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `Erro ao editar cliente: ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+    if (data.client) {
+      return data.client;
+    }
+    return {
+      id: clientId,
+      name: clientName.trim(),
+    };
+  } catch (error) {
+    console.error("Erro ao editar cliente no webhook:", error);
+    throw error;
+  }
+}
+
 // Função para deletar um cliente no webhook n8n
 export async function deleteClientInWebhook(clientId: string): Promise<void> {
   try {

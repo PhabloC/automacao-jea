@@ -5,16 +5,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  DashboardIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  UserIcon,
-  LogoutIcon,
-  EditIcon,
-  ShieldIcon,
-  UsersIcon,
+  BarChartIcon,
   CalendarIcon,
   CheckCircleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DashboardIcon,
+  EditIcon,
+  LogoutIcon,
+  ShieldIcon,
+  UserIcon,
+  UsersIcon,
 } from "@/svg";
 import { automationDefinitions } from "@/lib/automations";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,9 +57,9 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const userAvatar = user?.user_metadata?.avatar_url || "";
 
   const getAutomationIcon = (id: string) => {
-    if (id === "calendario") {
-      return <CalendarIcon className="w-5 h-5" />;
-    }
+    if (id === "calendario") return <CalendarIcon className="w-5 h-5" />;
+    if (id === "relatorios") return <BarChartIcon className="w-5 h-5" />;
+    return null;
   };
 
   const isActive = (path: string) => pathname === path;

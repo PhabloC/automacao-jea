@@ -28,6 +28,12 @@ export const automationDefinitions: Omit<
     description:
       "Automação para criar tarefas de posts no calendário, organizando conteúdo por cliente e mês.",
   },
+  {
+    id: "relatorios",
+    title: "Relatórios",
+    description:
+      "Gerencie clientes e configurações de relatórios Meta e Google: dias de envio, período e mensagens personalizadas com tags.",
+  },
 ];
 
 // Função para criar automações com valores iniciais zerados
