@@ -6,7 +6,12 @@ const WEBHOOK_URL =
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, clientes } = body;
+    const { id, clientes, email, telefone } = body as {
+      id?: unknown;
+      clientes?: unknown;
+      email?: unknown;
+      telefone?: unknown;
+    };
 
     if (!id) {
       return NextResponse.json(
@@ -31,20 +36,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[API Clients] Editando cliente:", {
+    const payload: Record<string, string | number> = {
       id: idToSend,
       clientes: clientes.trim(),
-    });
+    };
+    if (typeof email === "string" && email.trim()) payload.email = email.trim();
+    if (typeof telefone === "string" && telefone.trim())
+      payload.telefone = telefone.trim();
+
+    console.log("[API Clients] Editando cliente:", payload);
 
     const response = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        id: idToSend,
-        clientes: clientes.trim(),
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {

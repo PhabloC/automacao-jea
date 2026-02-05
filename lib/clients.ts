@@ -185,26 +185,46 @@ export async function createClientInWebhook(
   }
 }
 
+// Parâmetros para edição de cliente no webhook n8n
+export interface UpdateClientParams {
+  name: string;
+  email?: string;
+  telefone?: string;
+}
+
 // Função para editar um cliente no webhook n8n
 export async function updateClientInWebhook(
   clientId: string,
-  clientName: string
+  params: UpdateClientParams | string
 ): Promise<Client | null> {
+  const name =
+    typeof params === "string" ? params.trim() : params.name.trim();
+  const email =
+    typeof params === "string" ? undefined : params.email?.trim() || undefined;
+  const telefone =
+    typeof params === "string"
+      ? undefined
+      : params.telefone?.trim() || undefined;
+
   try {
     const idNumber = parseInt(clientId, 10);
     if (isNaN(idNumber) || idNumber <= 0) {
       throw new Error(`ID inválido para edição: ${clientId}`);
     }
 
+    const body: Record<string, string | number> = {
+      id: idNumber,
+      clientes: name,
+    };
+    if (email) body.email = email;
+    if (telefone) body.telefone = telefone;
+
     const response = await fetch("/api/clients/editar", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        id: idNumber,
-        clientes: clientName.trim(),
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {

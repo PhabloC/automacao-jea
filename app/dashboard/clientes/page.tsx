@@ -37,6 +37,8 @@ export default function ClientesPage() {
   // Estados da edição
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editName, setEditName] = useState<string>("");
+  const [editEmail, setEditEmail] = useState<string>("");
+  const [editPhone, setEditPhone] = useState<string>("");
   const [editError, setEditError] = useState<string>("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
@@ -207,6 +209,8 @@ export default function ClientesPage() {
   const handleOpenEdit = (client: Client) => {
     setEditingClient(client);
     setEditName(client.name);
+    setEditEmail(client.email ?? "");
+    setEditPhone(client.telefone ?? "");
     setEditError("");
   };
 
@@ -214,8 +218,15 @@ export default function ClientesPage() {
     if (!isSavingEdit) {
       setEditingClient(null);
       setEditName("");
+      setEditEmail("");
+      setEditPhone("");
       setEditError("");
     }
+  };
+
+  const handleEditPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+    setEditPhone(formatPhoneMask(digits));
   };
 
   const handleSaveEdit = async () => {
@@ -241,7 +252,11 @@ export default function ClientesPage() {
     setEditError("");
 
     try {
-      await updateClientInWebhook(editingClient.id, trimmedName);
+      await updateClientInWebhook(editingClient.id, {
+        name: trimmedName,
+        email: editEmail.trim() || undefined,
+        telefone: editPhone.trim() || undefined,
+      });
       const updatedClients = await loadClientsFromWebhook();
       setClients(updatedClients);
       handleCloseEdit();
@@ -452,29 +467,80 @@ export default function ClientesPage() {
                     </button>
                   </div>
                   <div className="p-6 space-y-4">
-                    <label
-                      htmlFor="edit-client-name"
-                      className="block text-sm font-medium text-gray-300"
-                    >
-                      Nome do cliente
-                    </label>
-                    <input
-                      id="edit-client-name"
-                      type="text"
-                      value={editName}
-                      onChange={(e) => {
-                        setEditName(e.target.value);
-                        setEditError("");
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleSaveEdit();
-                        if (e.key === "Escape") handleCloseEdit();
-                      }}
-                      disabled={isSavingEdit}
-                      className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
-                      placeholder="Nome do cliente"
-                      autoFocus
-                    />
+                    <div>
+                      <label
+                        htmlFor="edit-client-name"
+                        className="block text-sm font-medium text-gray-300 mb-1"
+                      >
+                        Nome do cliente *
+                      </label>
+                      <input
+                        id="edit-client-name"
+                        type="text"
+                        value={editName}
+                        onChange={(e) => {
+                          setEditName(e.target.value);
+                          setEditError("");
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSaveEdit();
+                          if (e.key === "Escape") handleCloseEdit();
+                        }}
+                        disabled={isSavingEdit}
+                        className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                        placeholder="Nome do cliente"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="edit-client-email"
+                        className="block text-sm font-medium text-gray-300 mb-1"
+                      >
+                        E-mail
+                      </label>
+                      <input
+                        id="edit-client-email"
+                        type="email"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        disabled={isSavingEdit}
+                        className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                        placeholder="email@exemplo.com"
+                        aria-label="E-mail do cliente"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="edit-client-phone"
+                        className="block text-sm font-medium text-gray-300 mb-1"
+                      >
+                        Telefone
+                      </label>
+                      <input
+                        id="edit-client-phone"
+                        type="tel"
+                        inputMode="numeric"
+                        autoComplete="tel"
+                        value={editPhone}
+                        onChange={handleEditPhoneChange}
+                        onKeyDown={(e) => {
+                          if (
+                            e.key.length === 1 &&
+                            !/\d/.test(e.key) &&
+                            !e.ctrlKey &&
+                            !e.metaKey
+                          ) {
+                            e.preventDefault();
+                          }
+                        }}
+                        disabled={isSavingEdit}
+                        className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                        placeholder="(00) 00000-0000"
+                        aria-label="Telefone do cliente (apenas números)"
+                        maxLength={16}
+                      />
+                    </div>
                     {editError && (
                       <p className="text-sm text-red-400">{editError}</p>
                     )}
