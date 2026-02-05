@@ -24,6 +24,7 @@ import {
   type RelatorioCliente,
   type RelatorioClienteCreate,
 } from "@/lib/relatorios-clientes";
+import { fetchClientsFromWebhook, type Client } from "@/lib/clients";
 import AlertModal from "@/components/alert-modal/AlertModal";
 
 const DIAS_SEMANA = [
@@ -51,6 +52,11 @@ export default function RelatoriosPage() {
     message: string;
     type: "success" | "error";
   }>({ show: false, message: "", type: "success" });
+
+  // Clientes n8n (para dropdown no modal adicionar)
+  const [n8nClients, setN8nClients] = useState<Client[]>([]);
+  const [isLoadingN8nClients, setIsLoadingN8nClients] = useState(false);
+  const [selectedN8nClientId, setSelectedN8nClientId] = useState<string>("");
 
   // Modal cliente (add/edit)
   const [clientModal, setClientModal] = useState<{
@@ -165,6 +171,19 @@ export default function RelatoriosPage() {
     );
   };
 
+  const loadN8nClients = useCallback(async () => {
+    setIsLoadingN8nClients(true);
+    try {
+      const list = await fetchClientsFromWebhook();
+      setN8nClients(list);
+    } catch (err) {
+      console.error(err);
+      setN8nClients([]);
+    } finally {
+      setIsLoadingN8nClients(false);
+    }
+  }, []);
+
   const handleOpenAdd = () => {
     setFormData({
       nome: "",
@@ -179,7 +198,26 @@ export default function RelatoriosPage() {
       campanha_google: false,
     });
     setFormError("");
+    setSelectedN8nClientId("");
     setClientModal({ open: true, mode: "add", client: null });
+    loadN8nClients();
+  };
+
+  const handleSelectN8nClient = (clientId: string) => {
+    setSelectedN8nClientId(clientId);
+    if (!clientId) {
+      setFormData((p) => ({ ...p, nome: "", email: "", telefone: "" }));
+      return;
+    }
+    const client = n8nClients.find((c) => c.id === clientId);
+    if (client) {
+      setFormData((p) => ({
+        ...p,
+        nome: client.name,
+        email: client.email ?? "",
+        telefone: client.telefone ?? "",
+      }));
+    }
   };
 
   const handleOpenEdit = (client: RelatorioCliente) => {
@@ -202,7 +240,10 @@ export default function RelatoriosPage() {
   };
 
   const handleCloseClientModal = () => {
-    if (!isSaving) setClientModal({ open: false, mode: "add", client: null });
+    if (!isSaving) {
+      setSelectedN8nClientId("");
+      setClientModal({ open: false, mode: "add", client: null });
+    }
   };
 
   const toggleDay = (day: number) => {
@@ -438,7 +479,7 @@ export default function RelatoriosPage() {
                 className="cursor-pointer px-6 py-3 rounded-lg font-medium bg-red-900 hover:bg-red-800 text-white transition-colors flex items-center gap-2 shrink-0"
               >
                 <span className="text-lg leading-none">+</span>
-                Adicionar cliente
+                Adicionar relatório
               </button>
             </div>
 
@@ -710,62 +751,123 @@ export default function RelatoriosPage() {
               </button>
             </div>
             <form onSubmit={handleSubmitClient} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="rel-nome"
-                    className="block text-sm font-medium text-gray-300 mb-1"
-                  >
-                    Nome *
-                  </label>
-                  <input
-                    id="rel-nome"
-                    type="text"
-                    required
-                    value={formData.nome}
-                    onChange={(e) =>
-                      setFormData((p) => ({ ...p, nome: e.target.value }))
-                    }
-                    className="w-full px-3 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="rel-email"
-                    className="block text-sm font-medium text-gray-300 mb-1"
-                  >
-                    E-mail *
-                  </label>
-                  <input
-                    id="rel-email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData((p) => ({ ...p, email: e.target.value }))
-                    }
-                    className="w-full px-3 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900"
-                  />
-                </div>
-              </div>
-              <div>
-                <label
-                  htmlFor="rel-telefone"
-                  className="block text-sm font-medium text-gray-300 mb-1"
-                >
-                  Telefone *
-                </label>
-                <input
-                  id="rel-telefone"
-                  type="tel"
-                  required
-                  value={formData.telefone}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, telefone: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900"
-                />
-              </div>
+              {clientModal.mode === "add" ? (
+                <>
+                  <div>
+                    <label
+                      htmlFor="rel-cliente-n8n"
+                      className="block text-sm font-medium text-gray-300 mb-1"
+                    >
+                      Cliente *
+                    </label>
+                    <select
+                      id="rel-cliente-n8n"
+                      required
+                      value={selectedN8nClientId}
+                      onChange={(e) => handleSelectN8nClient(e.target.value)}
+                      disabled={isLoadingN8nClients}
+                      className="w-full px-3 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 disabled:opacity-50"
+                      aria-label="Selecionar cliente"
+                    >
+                      <option value="">
+                        {isLoadingN8nClients
+                          ? "Carregando clientes..."
+                          : "Selecione um cliente"}
+                      </option>
+                      {n8nClients.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedN8nClientId && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-gray-800/50 rounded-lg border border-red-900/20">
+                      <div>
+                        <span className="block text-xs font-medium text-gray-500 uppercase mb-0.5">
+                          E-mail
+                        </span>
+                        <p className="text-sm text-gray-300">
+                          {formData.email || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="block text-xs font-medium text-gray-500 uppercase mb-0.5">
+                          Telefone
+                        </span>
+                        <p className="text-sm text-gray-300">
+                          {formData.telefone || "—"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        htmlFor="rel-nome"
+                        className="block text-sm font-medium text-gray-300 mb-1"
+                      >
+                        Nome *
+                      </label>
+                      <input
+                        id="rel-nome"
+                        type="text"
+                        required
+                        value={formData.nome}
+                        onChange={(e) =>
+                          setFormData((p) => ({ ...p, nome: e.target.value }))
+                        }
+                        className="w-full px-3 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="rel-email"
+                        className="block text-sm font-medium text-gray-300 mb-1"
+                      >
+                        E-mail *
+                      </label>
+                      <input
+                        id="rel-email"
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            email: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="rel-telefone"
+                      className="block text-sm font-medium text-gray-300 mb-1"
+                    >
+                      Telefone *
+                    </label>
+                    <input
+                      id="rel-telefone"
+                      type="tel"
+                      required
+                      value={formData.telefone}
+                      onChange={(e) =>
+                        setFormData((p) => ({
+                          ...p,
+                          telefone: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900"
+                    />
+                  </div>
+                </>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label

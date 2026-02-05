@@ -1,7 +1,9 @@
-// Tipos para clientes
+// Tipos para clientes (n8n pode retornar email e telefone)
 export interface Client {
   id: string;
   name: string;
+  email?: string;
+  telefone?: string;
 }
 
 // Clientes padrão

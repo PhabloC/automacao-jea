@@ -43,22 +43,36 @@ export async function GET(request: NextRequest) {
     });
 
     // Processar formato específico do webhook n8n:
-    // [{ data: [{ clientes: "...", id: 1, ... }] }]
-    let clients: Array<{ id: string; name: string }> = [];
+    // [{ data: [{ clientes: "...", id: 1, email?: "...", telefone?: "..." }] }]
+    type WebhookItem = {
+      id?: unknown;
+      clientes?: string;
+      email?: string;
+      telefone?: string;
+    };
+    type ClientItem = {
+      id: string;
+      name: string;
+      email?: string;
+      telefone?: string;
+    };
+    let clients: ClientItem[] = [];
 
     if (Array.isArray(data) && data.length > 0) {
       const firstItem = data[0];
       if (firstItem?.data && Array.isArray(firstItem.data)) {
-        type WebhookItem = { id?: unknown; clientes?: string };
         clients = firstItem.data
           .map((item: WebhookItem) => ({
             id: String(item.id),
-            name: item.clientes || "",
+            name: (item.clientes || "").trim(),
+            email:
+              typeof item.email === "string" ? item.email.trim() : undefined,
+            telefone:
+              typeof item.telefone === "string"
+                ? item.telefone.trim()
+                : undefined,
           }))
-          .filter(
-            (client: { id: string; name: string }) =>
-              client.id && client.name && client.name.trim()
-          );
+          .filter((client: ClientItem) => client.id && client.name);
       }
     }
 
