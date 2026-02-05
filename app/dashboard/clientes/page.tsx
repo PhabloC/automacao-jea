@@ -268,7 +268,9 @@ export default function ClientesPage() {
       });
     } catch (err) {
       console.error("Erro ao editar cliente:", err);
-      setEditError("Erro ao editar cliente. Tente novamente.");
+      const message =
+        err instanceof Error ? err.message : "Erro ao editar cliente. Tente novamente.";
+      setEditError(message);
     } finally {
       setIsSavingEdit(false);
     }

@@ -36,13 +36,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Webhook n8n em produção pode aceitar só id e clientes. Envie apenas isso
+    // para evitar erro. Quando o workflow aceitar email e telefone, descomente abaixo.
     const payload: Record<string, string | number> = {
       id: idToSend,
       clientes: clientes.trim(),
     };
-    if (typeof email === "string" && email.trim()) payload.email = email.trim();
-    if (typeof telefone === "string" && telefone.trim())
-      payload.telefone = telefone.trim();
+    // if (typeof email === "string" && email.trim()) payload.email = email.trim();
+    // if (typeof telefone === "string" && telefone.trim()) payload.telefone = telefone.trim();
 
     console.log("[API Clients] Editando cliente:", payload);
 
@@ -54,22 +55,24 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(payload),
     });
 
+    const responseText = await response.text().catch(() => "");
+
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "Erro desconhecido");
-      console.error(
-        "[API Clients] Erro ao editar cliente:",
-        response.status,
-        errorText
-      );
-      return NextResponse.json(
-        { error: `Erro ao editar cliente: ${response.status}` },
-        { status: response.status }
-      );
+      let errorMessage = `Erro ao editar cliente: ${response.status}`;
+      try {
+        const errorJson = responseText ? JSON.parse(responseText) : null;
+        if (errorJson?.error) errorMessage = errorJson.error;
+        else if (errorJson?.message) errorMessage = errorJson.message;
+        else if (responseText?.trim()) errorMessage = responseText.trim();
+      } catch {
+        if (responseText?.trim()) errorMessage = responseText.trim();
+      }
+      console.error("[API Clients] Erro ao editar cliente:", response.status, responseText);
+      return NextResponse.json({ error: errorMessage }, { status: response.status });
     }
 
     let clientData = null;
     const contentType = response.headers.get("content-type");
-    const responseText = await response.text();
 
     if (responseText && contentType?.includes("application/json")) {
       try {
