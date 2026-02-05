@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const WEBHOOK_URL = "https://gateway.jeamarketing.com.br/webhook/adicionar-cliente";
+const WEBHOOK_URL =
+  "https://gateway.jeamarketing.com.br/webhook/adicionar-cliente";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { clientes } = body;
+    const { clientes, email, telefone } = body as {
+      clientes?: unknown;
+      email?: unknown;
+      telefone?: unknown;
+    };
 
     if (!clientes || typeof clientes !== "string" || !clientes.trim()) {
       return NextResponse.json(
@@ -14,23 +19,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[API Clients] Adicionando cliente:", clientes);
+    const payload: Record<string, string> = {
+      clientes: clientes.trim(),
+    };
+    if (typeof email === "string" && email.trim()) payload.email = email.trim();
+    if (typeof telefone === "string" && telefone.trim())
+      payload.telefone = telefone.trim();
+
+    console.log("[API Clients] Adicionando cliente:", payload);
 
     const response = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        clientes: clientes.trim(),
-      }),
+      body: JSON.stringify(payload),
     });
 
-    console.log("[API Clients] Status da resposta:", response.status, response.statusText);
+    console.log(
+      "[API Clients] Status da resposta:",
+      response.status,
+      response.statusText
+    );
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Erro desconhecido");
-      console.error("[API Clients] Erro ao adicionar cliente:", response.status, errorText);
+      console.error(
+        "[API Clients] Erro ao adicionar cliente:",
+        response.status,
+        errorText
+      );
       return NextResponse.json(
         { error: `Erro ao adicionar cliente: ${response.status}` },
         { status: response.status }
@@ -41,13 +59,15 @@ export async function POST(request: NextRequest) {
     let clientData = null;
     const contentType = response.headers.get("content-type");
     const responseText = await response.text();
-    
+
     if (responseText) {
       if (contentType?.includes("application/json")) {
         try {
           clientData = JSON.parse(responseText);
         } catch {
-          console.warn("[API Clients] Resposta não é JSON válido, mas continua");
+          console.warn(
+            "[API Clients] Resposta não é JSON válido, mas continua"
+          );
         }
       } else {
         console.warn("[API Clients] Resposta não é JSON:", contentType);
@@ -64,7 +84,11 @@ export async function POST(request: NextRequest) {
           id: String(clientData.id),
           name: clientData.clientes,
         };
-      } else if (clientData.data && clientData.data.id && clientData.data.clientes) {
+      } else if (
+        clientData.data &&
+        clientData.data.id &&
+        clientData.data.clientes
+      ) {
         // Formato com wrapper: { data: { id, clientes } }
         createdClient = {
           id: String(clientData.data.id),

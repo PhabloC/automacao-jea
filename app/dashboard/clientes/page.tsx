@@ -108,23 +108,33 @@ export default function ClientesPage() {
 
     // Mostrar modal de confirmação
     const trimmedName = newClientName.trim();
+    const email = newClientEmail.trim() || undefined;
+    const telefone = newClientPhone.trim() || undefined;
     setModalState({
       isOpen: true,
       type: "confirm",
       title: "Confirmar Criação de Cliente",
       message: `Deseja criar o cliente "${trimmedName}"?`,
       onConfirm: async () => {
-        await executeCreateClient(trimmedName);
+        await executeCreateClient({
+          name: trimmedName,
+          email,
+          telefone,
+        });
       },
     });
   };
 
-  const executeCreateClient = async (clientName: string) => {
+  const executeCreateClient = async (params: {
+    name: string;
+    email?: string;
+    telefone?: string;
+  }) => {
     setIsAdding(true);
     setError("");
 
     try {
-      await createClientInWebhook(clientName);
+      await createClientInWebhook(params);
 
       // Recarregar lista de clientes
       const updatedClients = await loadClientsFromWebhook();
@@ -137,7 +147,7 @@ export default function ClientesPage() {
         isOpen: true,
         type: "success",
         title: "Cliente Criado",
-        message: `O cliente "${clientName}" foi criado com sucesso!`,
+        message: `O cliente "${params.name}" foi criado com sucesso!`,
       });
     } catch (error) {
       console.error("Erro ao adicionar cliente:", error);
@@ -164,6 +174,19 @@ export default function ClientesPage() {
       resetCreateModalForm();
       setIsCreateModalOpen(false);
     }
+  };
+
+  // Máscara (00) 00000-0000: só números, máx. 11 dígitos
+  const formatPhoneMask = (digits: string): string => {
+    const d = digits.replace(/\D/g, "").slice(0, 11);
+    if (d.length <= 2) return d ? `(${d}` : "";
+    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+    setNewClientPhone(formatPhoneMask(digits));
   };
 
   const handleRemoveClient = async (clientId: string) => {
@@ -590,12 +613,25 @@ export default function ClientesPage() {
                       <input
                         id="new-client-phone"
                         type="tel"
+                        inputMode="numeric"
+                        autoComplete="tel"
                         value={newClientPhone}
-                        onChange={(e) => setNewClientPhone(e.target.value)}
+                        onChange={handlePhoneChange}
+                        onKeyDown={(e) => {
+                          if (
+                            e.key.length === 1 &&
+                            !/\d/.test(e.key) &&
+                            !e.ctrlKey &&
+                            !e.metaKey
+                          ) {
+                            e.preventDefault();
+                          }
+                        }}
                         disabled={isAdding}
                         className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
                         placeholder="(00) 00000-0000"
-                        aria-label="Telefone do cliente"
+                        aria-label="Telefone do cliente (apenas números)"
+                        maxLength={16}
                       />
                     </div>
                   </div>

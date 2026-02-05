@@ -127,21 +127,37 @@ export async function loadClientsFromWebhook(): Promise<Client[]> {
   }
 }
 
+// Parâmetros para criação de cliente no webhook n8n
+export interface CreateClientParams {
+  name: string;
+  email?: string;
+  telefone?: string;
+}
+
 // Função para criar um cliente no webhook n8n
 // Retorna o cliente criado com o ID real do banco de dados
 export async function createClientInWebhook(
-  clientName: string
+  params: CreateClientParams | string
 ): Promise<Client | null> {
+  const name = typeof params === "string" ? params.trim() : params.name.trim();
+  const email =
+    typeof params === "string" ? undefined : params.email?.trim() || undefined;
+  const telefone =
+    typeof params === "string"
+      ? undefined
+      : params.telefone?.trim() || undefined;
+
   try {
-    // Usar rota de API do Next.js para evitar problemas de CORS
+    const body: Record<string, string> = { clientes: name };
+    if (email) body.email = email;
+    if (telefone) body.telefone = telefone;
+
     const response = await fetch("/api/clients/adicionar", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        clientes: clientName.trim(),
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
