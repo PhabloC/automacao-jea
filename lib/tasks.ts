@@ -65,6 +65,22 @@ export function getTasks(): Task[] {
   return [];
 }
 
+// Atualizar uma tarefa (ex.: posts)
+export function updateTask(
+  taskId: string,
+  payload: { posts: TaskPost[]; postsCount: number }
+): void {
+  if (typeof window === "undefined") return;
+
+  const tasks = getTasks();
+  const updatedTasks = tasks.map((task) =>
+    task.id === taskId
+      ? { ...task, posts: payload.posts, postsCount: payload.postsCount }
+      : task
+  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTasks));
+}
+
 // Deletar uma tarefa específica
 export function deleteTask(taskId: string): void {
   if (typeof window === "undefined") return;
@@ -100,7 +116,7 @@ export async function fetchTasksFromApi(accessToken: string): Promise<Task[]> {
 
 export async function saveTaskToApi(
   accessToken: string,
-  task: Omit<Task, "id" | "createdAt">,
+  task: Omit<Task, "id" | "createdAt">
 ): Promise<{ id: string; createdAt: string } | null> {
   const res = await fetch(TASKS_API, {
     method: "POST",
@@ -121,9 +137,36 @@ export async function saveTaskToApi(
   return { id: data.id, createdAt: data.createdAt };
 }
 
-export async function deleteTaskFromApi(
+export async function updateTaskInApi(
   accessToken: string,
   taskId: string,
+  payload: { posts: TaskPost[]; postsCount: number }
+): Promise<boolean> {
+  const res = await fetch(TASKS_API, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      id: taskId,
+      posts: payload.posts,
+      postsCount: payload.postsCount,
+    }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    console.error("[tasks] Erro ao atualizar tarefa na API:", data.error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function deleteTaskFromApi(
+  accessToken: string,
+  taskId: string
 ): Promise<boolean> {
   const res = await fetch(`${TASKS_API}?id=${encodeURIComponent(taskId)}`, {
     method: "DELETE",

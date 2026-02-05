@@ -10,15 +10,21 @@ import {
   TrashIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  EditIcon,
 } from "@/svg";
 import type { TaskPost } from "@/lib/tasks";
 import {
   getTasks,
   deleteTask,
+  updateTask,
   fetchTasksFromApi,
   deleteTaskFromApi,
+  updateTaskInApi,
   type Task,
 } from "@/lib/tasks";
+import { executeAutomation } from "@/lib/automations";
+import PostModal from "@/components/calendar-form/PostModal";
+import type { Post } from "@/components/calendar-form/types";
 import Image from "next/image";
 import AlertModal, {
   type AlertModalType,
@@ -38,6 +44,8 @@ export default function TarefasPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const tasksPerPage = 4;
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [resendingTaskId, setResendingTaskId] = useState<string | null>(null);
 
   // Estados do modal
   const [modalState, setModalState] = useState<{
@@ -110,6 +118,75 @@ export default function TarefasPage() {
         setModalState((prev) => ({ ...prev, isOpen: false }));
       },
     });
+  };
+
+  const handleEditTask = (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!task.posts?.length) return;
+    setEditingTask(task);
+  };
+
+  const handleSaveEditedPosts = async (newPosts: Post[]) => {
+    if (!editingTask) return;
+    if (isLocalhost) {
+      updateTask(editingTask.id, {
+        posts: newPosts,
+        postsCount: newPosts.length,
+      });
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === editingTask.id
+            ? { ...t, posts: newPosts, postsCount: newPosts.length }
+            : t
+        )
+      );
+    } else if (session?.access_token) {
+      const ok = await updateTaskInApi(session.access_token, editingTask.id, {
+        posts: newPosts,
+        postsCount: newPosts.length,
+      });
+      if (ok) await loadTasks();
+    }
+    setEditingTask(null);
+  };
+
+  const handleResendTask = async (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (
+      !task.clientId ||
+      !task.monthId ||
+      !task.posts?.length ||
+      task.automationId !== "calendario"
+    ) {
+      return;
+    }
+    setResendingTaskId(task.id);
+    try {
+      const result = await executeAutomation("calendario", {
+        clientId: task.clientId,
+        monthId: task.monthId,
+        clientName: task.clientName,
+        monthName: task.monthName ?? undefined,
+        posts: task.posts as Post[],
+      });
+      setModalState({
+        isOpen: true,
+        type: result.success ? "success" : "error",
+        title: result.success ? "Reenvio concluído" : "Erro no reenvio",
+        message: result.message,
+        onConfirm: () => setModalState((p) => ({ ...p, isOpen: false })),
+      });
+    } catch {
+      setModalState({
+        isOpen: true,
+        type: "error",
+        title: "Erro no reenvio",
+        message: "Não foi possível reenviar a tarefa ao n8n.",
+        onConfirm: () => setModalState((p) => ({ ...p, isOpen: false })),
+      });
+    } finally {
+      setResendingTaskId(null);
+    }
   };
 
   // Calcular tarefas da página atual
@@ -304,6 +381,49 @@ export default function TarefasPage() {
                                   >
                                     {task.success ? "Sucesso" : "Erro"}
                                   </div>
+                                  {hasPosts && (
+                                    <button
+                                      onClick={(e) => handleEditTask(task, e)}
+                                      className="cursor-pointer p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 rounded-lg transition-colors"
+                                      title="Editar posts da tarefa"
+                                      aria-label="Editar posts da tarefa"
+                                    >
+                                      <EditIcon className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                  {hasPosts &&
+                                    task.automationId === "calendario" &&
+                                    task.clientId &&
+                                    task.monthId && (
+                                      <button
+                                        onClick={(e) =>
+                                          handleResendTask(task, e)
+                                        }
+                                        disabled={resendingTaskId === task.id}
+                                        className="cursor-pointer p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Reenviar ao n8n"
+                                        aria-label="Reenviar tarefa ao n8n"
+                                      >
+                                        {resendingTaskId === task.id ? (
+                                          <SpinnerIcon className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                            aria-hidden
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                            />
+                                          </svg>
+                                        )}
+                                      </button>
+                                    )}
                                   <button
                                     onClick={(e) => handleDeleteTask(task, e)}
                                     className="cursor-pointer p-2 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition-colors"
@@ -397,14 +517,14 @@ export default function TarefasPage() {
                                                 </span>
                                                 <span className="text-white ml-2">
                                                   {new Date(
-                                                    post.dataPublicacao,
+                                                    post.dataPublicacao
                                                   ).toLocaleDateString(
                                                     "pt-BR",
                                                     {
                                                       day: "2-digit",
                                                       month: "2-digit",
                                                       year: "numeric",
-                                                    },
+                                                    }
                                                   )}
                                                 </span>
                                               </div>
@@ -431,7 +551,7 @@ export default function TarefasPage() {
                                             )}
                                           </div>
                                         </div>
-                                      ),
+                                      )
                                     )}
                                   </div>
                                 </div>
@@ -474,7 +594,7 @@ export default function TarefasPage() {
                         <div className="flex items-center gap-1">
                           {Array.from(
                             { length: totalPages },
-                            (_, i) => i + 1,
+                            (_, i) => i + 1
                           ).map((page) => {
                             // Mostrar apenas algumas páginas ao redor da atual
                             if (
@@ -513,7 +633,7 @@ export default function TarefasPage() {
                         <button
                           onClick={() =>
                             setCurrentPage((prev) =>
-                              Math.min(totalPages, prev + 1),
+                              Math.min(totalPages, prev + 1)
                             )
                           }
                           disabled={currentPage === totalPages}
@@ -554,6 +674,27 @@ export default function TarefasPage() {
           modalState.type === "confirm" || modalState.type === "warning"
         }
       />
+
+      {/* Modal de Edição de Posts da Tarefa */}
+      {editingTask && (
+        <PostModal
+          isOpen={true}
+          onClose={() => setEditingTask(null)}
+          onSave={handleSaveEditedPosts}
+          title="Editar posts da tarefa"
+          initialPosts={
+            editingTask.posts?.map((p) => ({
+              id: p.id,
+              titulo: p.titulo,
+              formato: p.formato,
+              canais: p.canais,
+              dataPublicacao: p.dataPublicacao,
+              descricao: p.descricao,
+              referencia: p.referencia,
+            })) ?? []
+          }
+        />
+      )}
     </div>
   );
 }

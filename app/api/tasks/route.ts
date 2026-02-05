@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
         {
           error: "Acesso negado. Apenas administradores podem listar tarefas.",
         },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
       console.error("[API Tasks] Erro ao buscar tarefas:", error);
       return NextResponse.json(
         { error: "Erro ao buscar tarefas" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
     console.error("[API Tasks] Erro:", err);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     if (!hasPermission) {
       return NextResponse.json(
         { error: "Acesso negado. Sem permissão para criar tarefas." },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Campos obrigatórios ausentes na tarefa" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
       console.error("[API Tasks] Erro ao criar tarefa:", result.error);
       return NextResponse.json(
         { error: "Erro ao criar tarefa" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -241,7 +241,80 @@ export async function POST(request: NextRequest) {
     console.error("[API Tasks] Erro:", err);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH – Atualizar tarefa (apenas admin) – ex.: editar posts
+export async function PATCH(request: NextRequest) {
+  try {
+    const auth = await getAuthUser(request);
+    if (!auth) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const isAdmin = await checkIsAdmin(auth.user.id);
+    if (!isAdmin) {
+      return NextResponse.json(
+        {
+          error: "Acesso negado. Apenas administradores podem editar tarefas.",
+        },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { id: taskId, posts, postsCount } = body;
+
+    if (!taskId || typeof taskId !== "string") {
+      return NextResponse.json(
+        { error: "ID da tarefa é obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    const updatePayload: { posts?: TaskPostRow[]; posts_count?: number } = {};
+    if (Array.isArray(posts)) {
+      updatePayload.posts = posts;
+    }
+    if (typeof postsCount === "number" && postsCount >= 0) {
+      updatePayload.posts_count = postsCount;
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+      return NextResponse.json(
+        { error: "Nenhum campo válido para atualizar (posts ou postsCount)" },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("automation_tasks")
+      .update(updatePayload)
+      .eq("id", taskId)
+      .select("id, posts, posts_count")
+      .single();
+
+    if (error) {
+      console.error("[API Tasks] Erro ao atualizar tarefa:", error);
+      return NextResponse.json(
+        { error: "Erro ao atualizar tarefa" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      id: (data as { id: string }).id,
+      posts: (data as { posts: TaskPostRow[] }).posts,
+      postsCount: (data as { posts_count: number }).posts_count,
+    });
+  } catch (err) {
+    console.error("[API Tasks] Erro:", err);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
     );
   }
 }
@@ -260,7 +333,7 @@ export async function DELETE(request: NextRequest) {
         {
           error: "Acesso negado. Apenas administradores podem excluir tarefas.",
         },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -269,7 +342,7 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "Parâmetro id é obrigatório" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -282,7 +355,7 @@ export async function DELETE(request: NextRequest) {
       console.error("[API Tasks] Erro ao excluir tarefa:", error);
       return NextResponse.json(
         { error: "Erro ao excluir tarefa" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -291,7 +364,7 @@ export async function DELETE(request: NextRequest) {
     console.error("[API Tasks] Erro:", err);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
