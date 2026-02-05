@@ -12,7 +12,6 @@ import {
   type Client,
 } from "@/lib/clients";
 import Sidebar from "@/components/sidebar/Sidebar";
-import Tabs from "@/components/tabs/Tabs";
 import { CloseIcon, EditIcon, SpinnerIcon, TrashIcon, UsersIcon } from "@/svg";
 import AlertModal, {
   type AlertModalType,
@@ -29,12 +28,11 @@ export default function ClientesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string>("");
 
-  // Modal de criar cliente (com abas Cliente + Contato)
+  // Modal de criar cliente (nome, email, telefone)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newClientName, setNewClientName] = useState<string>("");
-  const [contactName, setContactName] = useState<string>("");
-  const [contactEmail, setContactEmail] = useState<string>("");
-  const [contactPhone, setContactPhone] = useState<string>("");
+  const [newClientEmail, setNewClientEmail] = useState<string>("");
+  const [newClientPhone, setNewClientPhone] = useState<string>("");
 
   // Estados da edição
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -156,9 +154,8 @@ export default function ClientesPage() {
 
   const resetCreateModalForm = () => {
     setNewClientName("");
-    setContactName("");
-    setContactEmail("");
-    setContactPhone("");
+    setNewClientEmail("");
+    setNewClientPhone("");
     setError("");
   };
 
@@ -524,126 +521,83 @@ export default function ClientesPage() {
                       <CloseIcon className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className=" p-4 overflow-y-auto flex-1">
-                    <Tabs
-                      defaultTab="cliente"
-                      tabs={[
-                        {
-                          id: "cliente",
-                          label: "Cliente",
-                          content: (
-                            <div className="space-y-4">
-                              <label
-                                htmlFor="new-client-name"
-                                className="block text-sm font-medium text-gray-300"
-                              >
-                                Nome do cliente
-                              </label>
-                              <input
-                                id="new-client-name"
-                                type="text"
-                                value={newClientName}
-                                onChange={(e) => {
-                                  setNewClientName(e.target.value);
-                                  setError("");
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    handleAddClient();
-                                  }
-                                }}
-                                disabled={isAdding}
-                                className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
-                                placeholder="Nome do cliente"
-                                autoFocus
-                                aria-required="true"
-                                aria-invalid={!!error}
-                                aria-describedby={
-                                  error ? "client-name-error" : undefined
-                                }
-                              />
-                              {error && (
-                                <p
-                                  id="client-name-error"
-                                  className="text-sm text-red-400"
-                                >
-                                  {error}
-                                </p>
-                              )}
-                            </div>
-                          ),
-                        },
-                        {
-                          id: "contato",
-                          label: "Contato",
-                          content: (
-                            <div className="space-y-4">
-                              <div>
-                                <label
-                                  htmlFor="contact-name"
-                                  className="block text-sm font-medium text-gray-300 mb-1"
-                                >
-                                  Nome
-                                </label>
-                                <input
-                                  id="contact-name"
-                                  type="text"
-                                  value={contactName}
-                                  onChange={(e) =>
-                                    setContactName(e.target.value)
-                                  }
-                                  disabled={isAdding}
-                                  className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
-                                  placeholder="Nome do contato"
-                                  aria-label="Nome do contato"
-                                />
-                              </div>
-                              <div>
-                                <label
-                                  htmlFor="contact-email"
-                                  className="block text-sm font-medium text-gray-300 mb-1"
-                                >
-                                  E-mail
-                                </label>
-                                <input
-                                  id="contact-email"
-                                  type="email"
-                                  value={contactEmail}
-                                  onChange={(e) =>
-                                    setContactEmail(e.target.value)
-                                  }
-                                  disabled={isAdding}
-                                  className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
-                                  placeholder="email@exemplo.com"
-                                  aria-label="E-mail do contato"
-                                />
-                              </div>
-                              <div>
-                                <label
-                                  htmlFor="contact-phone"
-                                  className="block text-sm font-medium text-gray-300 mb-1"
-                                >
-                                  Telefone
-                                </label>
-                                <input
-                                  id="contact-phone"
-                                  type="tel"
-                                  value={contactPhone}
-                                  onChange={(e) =>
-                                    setContactPhone(e.target.value)
-                                  }
-                                  disabled={isAdding}
-                                  className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
-                                  placeholder="(00) 00000-0000"
-                                  aria-label="Telefone do contato"
-                                />
-                              </div>
-                            </div>
-                          ),
-                        },
-                      ]}
-                    />
+                  <div className="p-4 overflow-y-auto flex-1 space-y-4">
+                    <div>
+                      <label
+                        htmlFor="new-client-name"
+                        className="block text-sm font-medium text-gray-300 mb-1"
+                      >
+                        Nome do cliente *
+                      </label>
+                      <input
+                        id="new-client-name"
+                        type="text"
+                        value={newClientName}
+                        onChange={(e) => {
+                          setNewClientName(e.target.value);
+                          setError("");
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddClient();
+                          }
+                        }}
+                        disabled={isAdding}
+                        className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                        placeholder="Nome do cliente"
+                        autoFocus
+                        aria-required="true"
+                        aria-invalid={!!error}
+                        aria-describedby={
+                          error ? "client-name-error" : undefined
+                        }
+                      />
+                      {error && (
+                        <p
+                          id="client-name-error"
+                          className="text-sm text-red-400 mt-1"
+                        >
+                          {error}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="new-client-email"
+                        className="block text-sm font-medium text-gray-300 mb-1"
+                      >
+                        E-mail
+                      </label>
+                      <input
+                        id="new-client-email"
+                        type="email"
+                        value={newClientEmail}
+                        onChange={(e) => setNewClientEmail(e.target.value)}
+                        disabled={isAdding}
+                        className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                        placeholder="email@exemplo.com"
+                        aria-label="E-mail do cliente"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="new-client-phone"
+                        className="block text-sm font-medium text-gray-300 mb-1"
+                      >
+                        Telefone
+                      </label>
+                      <input
+                        id="new-client-phone"
+                        type="tel"
+                        value={newClientPhone}
+                        onChange={(e) => setNewClientPhone(e.target.value)}
+                        disabled={isAdding}
+                        className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                        placeholder="(00) 00000-0000"
+                        aria-label="Telefone do cliente"
+                      />
+                    </div>
                   </div>
                   <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-800 shrink-0">
                     <button
