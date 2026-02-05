@@ -3,7 +3,34 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
+const PARTICLE_COUNT = 30;
+
+type ParticleStyle = {
+  left: string;
+  top: string;
+  opacity: number;
+  animation: string;
+  animationDelay: string;
+};
+
 export default function Preloader({ onComplete }: { onComplete: () => void }) {
+  const [particleStyles, setParticleStyles] = useState<ParticleStyle[]>([]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setParticleStyles(
+        [...Array(PARTICLE_COUNT)].map(() => ({
+          left: `${Math.random() * 100}%`,
+          top: `${Math.random() * 100}%`,
+          opacity: Math.random() * 0.5 + 0.2,
+          animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+          animationDelay: `${Math.random() * 2}s`,
+        }))
+      );
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [animationPhase, setAnimationPhase] = useState<
     "split" | "merge" | "complete"
   >("split");
@@ -74,19 +101,14 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
 
         {/* Partículas flutuantes */}
         <div className="absolute inset-0">
-          {[...Array(30)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 bg-red-500 rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: Math.random() * 0.5 + 0.2,
-                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
-                animationDelay: `${Math.random() * 2}s`,
-              }}
-            />
-          ))}
+          {particleStyles.length > 0 &&
+            particleStyles.map((style, i) => (
+              <div
+                key={i}
+                className="absolute w-1 h-1 bg-red-500 rounded-full"
+                style={style}
+              />
+            ))}
         </div>
 
         {/* Linhas de energia */}
@@ -126,7 +148,9 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
         {/* Glow effect atrás do logo */}
         <div
           className={`absolute w-64 h-64 bg-red-600/30 rounded-full blur-3xl transition-all duration-1000 ${
-            animationPhase === "merge" ? "scale-150 opacity-50" : "scale-100 opacity-30"
+            animationPhase === "merge"
+              ? "scale-150 opacity-50"
+              : "scale-100 opacity-30"
           }`}
         />
 
@@ -235,7 +259,9 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
           }`}
         >
           <Image src="/logo.png" alt="Logo" width={100} height={100} />
-          <p className="text-xs text-gray-500 mt-1 tracking-wider">AUTOMAÇÕES</p>
+          <p className="text-xs text-gray-500 mt-1 tracking-wider">
+            AUTOMAÇÕES
+          </p>
         </div>
       </div>
 

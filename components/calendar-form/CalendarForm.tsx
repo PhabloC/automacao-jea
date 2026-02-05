@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { loadClientsFromWebhook, type Client } from "@/lib/clients";
 import { SpinnerIcon, TrashIcon } from "@/svg";
 import { MONTHS } from "@/lib/constants";
-import { CalendarFormProps, Post } from "./types";
-import PostModal from "./PostModal";
+import { CalendarFormProps } from "./types";
+import { Post } from "../post-modal/types";
+import PostModal from "../post-modal/PostModal";
 
 export default function CalendarForm({
   onExecute,
@@ -43,8 +44,12 @@ export default function CalendarForm({
           ) {
             // Validar estrutura dos posts
             const validPosts = parsed.posts.filter(
-              (p: any) =>
-                p && typeof p === "object" && p.id && p.titulo && p.formato,
+              (p: unknown): p is Post =>
+                !!p &&
+                typeof p === "object" &&
+                "id" in p &&
+                "titulo" in p &&
+                "formato" in p
             );
             if (validPosts.length > 0) {
               setPosts(validPosts);
@@ -150,7 +155,7 @@ export default function CalendarForm({
       selectedMonth,
       selectedClientName,
       selectedMonthName,
-      posts,
+      posts
     );
 
     // Limpar dados do localStorage após execução bem-sucedida
@@ -382,7 +387,7 @@ export default function CalendarForm({
                             day: "2-digit",
                             month: "2-digit",
                             year: "numeric",
-                          },
+                          }
                         )}
                       </p>
                     )}
@@ -414,7 +419,7 @@ export default function CalendarForm({
                 Nenhum post adicionado ainda.
               </p>
               <p className="text-gray-500 text-xs mt-1">
-                Clique em "Adicionar Posts" para começar.
+                Clique em &quot;Adicionar Posts&quot; para começar.
               </p>
             </div>
           )}

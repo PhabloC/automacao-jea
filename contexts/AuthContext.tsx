@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
@@ -48,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLocalhost, setIsLocalhost] = useState(false);
+  const [isLocalhost] = useState(() => checkIsLocalhost());
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [hasPermission, setHasPermission] = useState(false);
 
@@ -84,57 +90,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const isLocal = checkIsLocalhost();
-    setIsLocalhost(isLocal);
-
-    // Se estiver em localhost, usar usuário de desenvolvimento como admin
-    if (isLocal) {
-      setUser(devUser);
-      setSession(null);
-      setUserRole("admin"); // Em localhost, sempre é admin
-      setHasPermission(true);
-      setLoading(false);
-      return;
-    }
+    if (isLocalhost) return;
 
     // Verificar sessão atual ao carregar (apenas em produção)
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
-      
-      // Buscar role do usuário se estiver logado
+
       if (session?.access_token) {
         await fetchUserRole(session.access_token);
       }
-      
+
       setLoading(false);
     };
 
     getSession();
 
-    // Escutar mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Buscar role do usuário quando a sessão mudar
-        if (session?.access_token) {
-          await fetchUserRole(session.access_token);
-        } else {
-          setUserRole(null);
-          setHasPermission(false);
-        }
-        
-        setLoading(false);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.access_token) {
+        await fetchUserRole(session.access_token);
+      } else {
+        setUserRole(null);
+        setHasPermission(false);
       }
-    );
+
+      setLoading(false);
+    });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isLocalhost]);
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -158,15 +152,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const effectiveUser = isLocalhost ? devUser : user;
+  const effectiveSession = isLocalhost ? null : session;
+  const effectiveUserRole: UserRole = isLocalhost ? "admin" : userRole;
+  const effectiveHasPermission = isLocalhost ? true : hasPermission;
+  const effectiveLoading = isLocalhost ? false : loading;
+
   return (
     <AuthContext.Provider
       value={{
-        user,
-        session,
-        loading,
-        userRole,
-        hasPermission,
-        isAdmin: userRole === "admin",
+        user: effectiveUser,
+        session: effectiveSession,
+        loading: effectiveLoading,
+        userRole: effectiveUserRole,
+        hasPermission: effectiveHasPermission,
+        isAdmin: effectiveUserRole === "admin",
         signInWithGoogle,
         signOut,
         isLocalhost,

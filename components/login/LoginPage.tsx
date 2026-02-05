@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { GoogleIcon, LightningIcon, SpinnerIcon } from "@/svg";
+import Image from "next/image";
+import { GoogleIcon, SpinnerIcon } from "@/svg";
 import { useAuth } from "@/contexts/AuthContext";
 import NeuralBackground from "@/components/neural-background/NeuralBackground";
 
@@ -10,7 +10,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { signInWithGoogle } = useAuth();
-  const router = useRouter();
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -18,7 +17,7 @@ export default function LoginPage() {
 
     try {
       await signInWithGoogle();
-    } catch (err) {
+    } catch {
       setError("Erro ao fazer login. Tente novamente.");
       setIsLoading(false);
     }
@@ -34,9 +33,11 @@ export default function LoginPage() {
         {/* Logo and Title */}
         <div className="text-center mb-10">
           <div className="flex justify-center mb-6">
-            <img
+            <Image
               src="/logo.png"
               alt="J&A Logo"
+              width={140}
+              height={56}
               className="h-14 w-auto drop-shadow-[0_0_30px_rgba(220,38,38,0.3)]"
             />
           </div>

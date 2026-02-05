@@ -2,25 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { CloseIcon, TrashIcon, ChevronRightIcon } from "@/svg";
-import { Post } from "./types";
-
-interface PostModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (posts: Post[]) => void;
-  initialPosts?: Post[];
-  title?: string;
-}
-
-interface PostFormData {
-  id: string;
-  titulo: string;
-  formato: string;
-  canais: string;
-  dataPublicacao: string;
-  descricao: string;
-  referencia: string;
-}
+import { PostFormData, PostModalProps } from "./types";
 
 export default function PostModal({
   isOpen,
@@ -33,9 +15,20 @@ export default function PostModal({
   const [openPostId, setOpenPostId] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Inicializar com posts existentes ou criar um novo
+  const createEmptyPost = (): PostFormData => ({
+    id: crypto.randomUUID(),
+    titulo: "",
+    formato: "",
+    canais: "",
+    dataPublicacao: "",
+    descricao: "",
+    referencia: "",
+  });
+
+  // Inicializar com posts existentes ou criar um novo (deferido para evitar setState síncrono no effect)
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
       if (initialPosts.length > 0) {
         setPosts(initialPosts.map((p) => ({ ...p })));
         setOpenPostId(initialPosts[0].id);
@@ -44,7 +37,8 @@ export default function PostModal({
         setPosts([newPost]);
         setOpenPostId(newPost.id);
       }
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [isOpen, initialPosts]);
 
   // Fechar modal ao pressionar ESC
@@ -65,16 +59,6 @@ export default function PostModal({
       document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
-
-  const createEmptyPost = (): PostFormData => ({
-    id: crypto.randomUUID(),
-    titulo: "",
-    formato: "",
-    canais: "",
-    dataPublicacao: "",
-    descricao: "",
-    referencia: "",
-  });
 
   const handleAddPost = () => {
     const newPost = createEmptyPost();
