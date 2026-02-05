@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const WEBHOOK_URL = "https://gateway.jeamarketing.com.br/webhook/excluir-cliente";
+const WEBHOOK_URL =
+  "https://gateway.jeamarketing.com.br/webhook/excluir-cliente";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,14 +19,24 @@ export async function POST(request: NextRequest) {
     const idToSend = typeof id === "string" ? parseInt(id, 10) : Number(id);
 
     if (isNaN(idToSend) || idToSend <= 0) {
-      console.error("[API Clients] ID inválido recebido:", { id, type: typeof id, parsed: idToSend });
+      console.error("[API Clients] ID inválido recebido:", {
+        id,
+        type: typeof id,
+        parsed: idToSend,
+      });
       return NextResponse.json(
         { error: `ID inválido: ${id}` },
         { status: 400 }
       );
     }
 
-    console.log("[API Clients] Excluindo cliente com ID:", idToSend, "(tipo:", typeof idToSend, ")");
+    console.log(
+      "[API Clients] Excluindo cliente com ID:",
+      idToSend,
+      "(tipo:",
+      typeof idToSend,
+      ")"
+    );
     console.log("[API Clients] URL do webhook:", WEBHOOK_URL);
 
     // Tentar DELETE com body primeiro (alguns webhooks aceitam)
@@ -40,7 +51,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Se falhar, tentar com ID na URL
-    if (!response.ok && response.status === 405 || response.status === 400) {
+    if ((!response.ok && response.status === 405) || response.status === 400) {
       console.log("[API Clients] Tentando DELETE com ID na URL...");
       const urlWithId = `${WEBHOOK_URL}?id=${idToSend}`;
       response = await fetch(urlWithId, {
@@ -51,14 +62,24 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log("[API Clients] Status da resposta:", response.status, response.statusText);
-    console.log("[API Clients] Headers da resposta:", Object.fromEntries(response.headers.entries()));
+    console.log(
+      "[API Clients] Status da resposta:",
+      response.status,
+      response.statusText
+    );
+    console.log(
+      "[API Clients] Headers da resposta:",
+      Object.fromEntries(response.headers.entries())
+    );
 
     // Ler a resposta antes de verificar ok
     const contentType = response.headers.get("content-type");
     const responseText = await response.text();
-    
-    console.log("[API Clients] Resposta do webhook:", responseText.substring(0, 500));
+
+    console.log(
+      "[API Clients] Resposta do webhook:",
+      responseText.substring(0, 500)
+    );
 
     if (!response.ok) {
       console.error("[API Clients] Erro ao excluir cliente:", {
@@ -67,7 +88,7 @@ export async function POST(request: NextRequest) {
         response: responseText,
       });
       return NextResponse.json(
-        { 
+        {
           error: `Erro ao excluir cliente: ${response.status} ${response.statusText}`,
           details: responseText.substring(0, 200),
         },
@@ -87,25 +108,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se realmente deletou - recarregar lista e verificar se o ID ainda existe
-    console.log("[API Clients] Verificando se cliente foi realmente excluído...");
-    const verifyResponse = await fetch("https://gateway.jeamarketing.com.br/webhook/listar-clientes");
+    console.log(
+      "[API Clients] Verificando se cliente foi realmente excluído..."
+    );
+    const verifyResponse = await fetch(
+      "https://gateway.jeamarketing.com.br/webhook/listar-clientes"
+    );
     if (verifyResponse.ok) {
       const verifyData = await verifyResponse.json();
       if (Array.isArray(verifyData) && verifyData.length > 0) {
         const firstItem = verifyData[0];
         if (firstItem?.data && Array.isArray(firstItem.data)) {
-          const clientExists = firstItem.data.some((item: any) => item.id === idToSend);
+          const clientExists = firstItem.data.some(
+            (item: { id?: string }) => item.id === idToSend
+          );
           if (clientExists) {
-            console.warn("[API Clients] ATENÇÃO: Cliente ainda existe após exclusão!");
+            console.warn(
+              "[API Clients] ATENÇÃO: Cliente ainda existe após exclusão!"
+            );
             return NextResponse.json(
-              { 
-                error: "Cliente não foi excluído. O webhook pode não estar funcionando corretamente.",
+              {
+                error:
+                  "Cliente não foi excluído. O webhook pode não estar funcionando corretamente.",
                 success: false,
               },
               { status: 500 }
             );
           } else {
-            console.log("[API Clients] Cliente confirmado como excluído (não está mais na lista)");
+            console.log(
+              "[API Clients] Cliente confirmado como excluído (não está mais na lista)"
+            );
           }
         }
       }
@@ -114,7 +146,10 @@ export async function POST(request: NextRequest) {
     console.log("[API Clients] Cliente excluído com sucesso");
 
     return NextResponse.json(
-      { success: true, data: data || { message: "Cliente excluído com sucesso" } },
+      {
+        success: true,
+        data: data || { message: "Cliente excluído com sucesso" },
+      },
       { status: 200 }
     );
   } catch (error) {

@@ -1,15 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { N8N_CONFIG } from "@/lib/config";
 
+interface TestResult {
+  name: string;
+  status: string;
+  message: string;
+  url?: string;
+  responseKeys?: string[];
+  isArray?: boolean;
+  hasData?: boolean;
+}
+
 export async function GET(request: NextRequest) {
-  const testResults: Record<string, any> = {
+  void request; // usado pela assinatura da rota Next.js
+  const testResults: {
+    config: Record<string, unknown>;
+    tests: TestResult[];
+  } = {
     config: {
       baseUrl: N8N_CONFIG.baseUrl,
       hasApiKey: !!N8N_CONFIG.apiKey,
       apiKeyLength: N8N_CONFIG.apiKey?.length || 0,
       workflowIds: N8N_CONFIG.workflowIds,
     },
-    tests: [] as any[],
+    tests: [],
   };
 
   // Teste 1: Verificar se a API Key está configurada
@@ -102,4 +116,3 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json(testResults, { status: 200 });
 }
-

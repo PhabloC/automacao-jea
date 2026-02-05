@@ -4,12 +4,6 @@ export interface Client {
   name: string;
 }
 
-// Tipo para resposta do webhook n8n
-interface WebhookClientResponse {
-  id: string;
-  clientes: string;
-}
-
 // Clientes padrão
 const DEFAULT_CLIENTS: Client[] = [
   { id: "1", name: "Amorim" },
@@ -20,13 +14,6 @@ const DEFAULT_CLIENTS: Client[] = [
   { id: "6", name: "J&A" },
   { id: "7", name: "Júpiter" },
 ];
-
-// URLs dos webhooks n8n
-const N8N_WEBHOOK_URLS = {
-  listar: "https://gateway.jeamarketing.com.br/webhook/listar-clientes",
-  adicionar: "https://gateway.jeamarketing.com.br/webhook/adicionar-cliente",
-  excluir: "https://gateway.jeamarketing.com.br/webhook/excluir-cliente",
-} as const;
 
 // Chave do localStorage
 const STORAGE_KEY = "calendario_clients";

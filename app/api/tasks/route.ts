@@ -213,7 +213,8 @@ export async function POST(request: NextRequest) {
         errMsg.includes("does not exist");
 
       if (isPostsColumnError) {
-        const { posts: _posts, ...payloadWithoutPosts } = insertPayload;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- posts removido intencionalmente do payload
+        const { posts, ...payloadWithoutPosts } = insertPayload;
         result = await supabaseAdmin
           .from("automation_tasks")
           .insert(payloadWithoutPosts)

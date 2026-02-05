@@ -25,7 +25,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, signOut, isLocalhost, isAdmin } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Fechar menu ao clicar fora

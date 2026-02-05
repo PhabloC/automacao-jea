@@ -48,7 +48,7 @@ export default function CalendarioAutomationPage() {
     const loadAutomation = async () => {
       const initialAutomations = createInitialAutomations();
       const calendarioAutomation = initialAutomations.find(
-        (a) => a.id === "calendario",
+        (a) => a.id === "calendario"
       );
       if (calendarioAutomation) {
         setAutomation(calendarioAutomation);
@@ -64,7 +64,7 @@ export default function CalendarioAutomationPage() {
                   lastRun: stats.lastRun,
                   status: stats.status,
                 }
-              : null,
+              : null
           );
         } catch (error) {
           console.error("Erro ao carregar estatísticas:", error);
@@ -80,7 +80,7 @@ export default function CalendarioAutomationPage() {
     monthId: string,
     clientName: string,
     monthName: string,
-    posts: Post[],
+    posts: Post[]
   ) => {
     if (executing) return;
 
@@ -144,7 +144,7 @@ export default function CalendarioAutomationPage() {
               lastRun: stats.lastRun || result.timestamp,
               status: stats.status,
             }
-          : null,
+          : null
       );
 
       setNotification({
@@ -156,7 +156,7 @@ export default function CalendarioAutomationPage() {
       setTimeout(() => {
         setNotification({ show: false, message: "", type: "success" });
       }, 5000);
-    } catch (error) {
+    } catch {
       setNotification({
         show: true,
         message: "Erro inesperado ao executar automação",

@@ -10,16 +10,11 @@ interface N8NExecution {
   mode: string;
   retryOf?: string;
   retrySuccess?: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
   error?: {
     name: string;
     message: string;
   };
-}
-
-interface N8NExecutionsResponse {
-  data: N8NExecution[];
-  nextCursor?: string;
 }
 
 interface AutomationStatistics {
@@ -31,6 +26,7 @@ interface AutomationStatistics {
 }
 
 export async function GET(request: NextRequest) {
+  void request; // usado pela assinatura da rota Next.js
   try {
     const { searchParams } = new URL(request.url);
     const automationId = searchParams.get("automationId");

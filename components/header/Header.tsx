@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Header() {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -34,7 +35,13 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <img src="/logo.png" alt="Logo" className="w-40 h-10" />
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={160}
+              height={40}
+              className="w-40 h-10"
+            />
             <div>
               <h1 className="text-2xl font-bold text-white">
                 Painel de Automações
@@ -54,9 +61,11 @@ export default function Header() {
               >
                 {/* User Photo */}
                 {userPhoto ? (
-                  <img
+                  <Image
                     src={userPhoto}
                     alt={userName}
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-full border-2 border-red-800/50"
                     referrerPolicy="no-referrer"
                   />

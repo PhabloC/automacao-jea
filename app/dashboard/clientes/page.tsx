@@ -72,7 +72,7 @@ export default function ClientesPage() {
 
   // Filtrar clientes baseado na busca
   const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    client.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddClient = async (e?: React.FormEvent) => {
@@ -87,7 +87,7 @@ export default function ClientesPage() {
 
     // Verificar se já existe
     const exists = clients.some(
-      (c) => c.name.toLowerCase().trim() === newClientName.toLowerCase().trim(),
+      (c) => c.name.toLowerCase().trim() === newClientName.toLowerCase().trim()
     );
     if (exists) {
       setError("Este cliente já existe");

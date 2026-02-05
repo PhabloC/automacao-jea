@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/sidebar/Sidebar";
@@ -23,8 +23,8 @@ import {
   type Task,
 } from "@/lib/tasks";
 import { executeAutomation } from "@/lib/automations";
-import PostModal from "@/components/calendar-form/PostModal";
-import type { Post } from "@/components/calendar-form/types";
+import PostModal from "@/components/post-modal/PostModal";
+import type { Post } from "@/components/post-modal/types";
 import Image from "next/image";
 import AlertModal, {
   type AlertModalType,
@@ -70,14 +70,7 @@ export default function TarefasPage() {
     }
   }, [user, authLoading, isAdmin, router]);
 
-  // Carregar tarefas
-  useEffect(() => {
-    if (user && isAdmin) {
-      loadTasks();
-    }
-  }, [user, isAdmin, session?.access_token, isLocalhost]);
-
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     setIsLoading(true);
     try {
       if (isLocalhost) {
@@ -94,7 +87,14 @@ export default function TarefasPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLocalhost, session?.access_token]);
+
+  // Carregar tarefas
+  useEffect(() => {
+    if (user && isAdmin) {
+      loadTasks();
+    }
+  }, [user, isAdmin, loadTasks]);
 
   const handleToggleTask = (taskId: string) => {
     setExpandedTaskId((prev) => (prev === taskId ? null : taskId));
