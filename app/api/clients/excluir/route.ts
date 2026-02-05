@@ -120,7 +120,8 @@ export async function POST(request: NextRequest) {
         const firstItem = verifyData[0];
         if (firstItem?.data && Array.isArray(firstItem.data)) {
           const clientExists = firstItem.data.some(
-            (item: { id?: string }) => item.id === idToSend
+            (item: { id?: string | number }) =>
+              String(item.id) === String(idToSend)
           );
           if (clientExists) {
             console.warn(

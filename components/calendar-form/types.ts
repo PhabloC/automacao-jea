@@ -1,5 +1,7 @@
 import { Post } from "../post-modal/types";
 
+export type { Post };
+
 export interface CalendarFormProps {
   onExecute: (
     clientId: string,
