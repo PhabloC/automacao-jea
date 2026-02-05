@@ -9,6 +9,7 @@ interface PostModalProps {
   onClose: () => void;
   onSave: (posts: Post[]) => void;
   initialPosts?: Post[];
+  title?: string;
 }
 
 interface PostFormData {
@@ -26,6 +27,7 @@ export default function PostModal({
   onClose,
   onSave,
   initialPosts = [],
+  title = "Adicionar Posts",
 }: PostModalProps) {
   const [posts, setPosts] = useState<PostFormData[]>([]);
   const [openPostId, setOpenPostId] = useState<string | null>(null);
@@ -99,31 +101,31 @@ export default function PostModal({
   const handlePostChange = (
     postId: string,
     field: keyof PostFormData,
-    value: string,
+    value: string
   ) => {
     setPosts(
-      posts.map((p) => (p.id === postId ? { ...p, [field]: value } : p)),
+      posts.map((p) => (p.id === postId ? { ...p, [field]: value } : p))
     );
   };
 
-  const handleSave = () => {
-    // Validar se pelo menos um post está preenchido
-    const validPosts = posts.filter(
-      (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim(),
-    );
+  const validPosts = posts.filter(
+    (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim()
+  );
+  const invalidCount = posts.length - validPosts.length;
+  const hasInvalidPosts = invalidCount > 0;
 
+  const handleSave = () => {
     if (validPosts.length === 0) {
       return;
     }
 
     onSave(validPosts);
-    onClose();
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
+    if (hasInvalidPosts) {
+      console.warn(
+        `${invalidCount} post(s) ignorado(s) por não terem título, formato e canais preenchidos.`
+      );
     }
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -131,7 +133,9 @@ export default function PostModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="post-modal-title"
     >
       <div
         ref={modalRef}
@@ -140,7 +144,12 @@ export default function PostModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-red-900/30">
-          <h2 className="text-xl font-semibold text-white">Adicionar Posts</h2>
+          <h2
+            id="post-modal-title"
+            className="text-xl font-semibold text-white"
+          >
+            {title}
+          </h2>
           <button
             onClick={onClose}
             className="cursor-pointer p-1 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
@@ -277,7 +286,7 @@ export default function PostModal({
                           handlePostChange(
                             post.id,
                             "dataPublicacao",
-                            e.target.value,
+                            e.target.value
                           )
                         }
                         className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900"
@@ -312,7 +321,7 @@ export default function PostModal({
                           handlePostChange(
                             post.id,
                             "referencia",
-                            e.target.value,
+                            e.target.value
                           )
                         }
                         placeholder="Link ou referência do post"
@@ -327,54 +336,56 @@ export default function PostModal({
         </div>
 
         {/* Footer */}
-        <div className=" flex items-center justify-between p-6 border-t border-red-900/30">
-          <button
-            type="button"
-            onClick={handleAddPost}
-            className=" cursor-pointer px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div className="flex flex-col gap-3 p-6 border-t border-red-900/30">
+          {hasInvalidPosts && (
+            <p className="text-amber-400 text-sm">
+              {validPosts.length} post(s) serão salvos. {invalidCount} post(s)
+              ignorado(s) por não terem título, formato e canais preenchidos.
+            </p>
+          )}
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handleAddPost}
+              className="cursor-pointer px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Adicionar Post
-          </button>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Adicionar Post
+            </button>
 
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="cursor-pointer px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={
-                !posts.some(
-                  (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim(),
-                )
-              }
-              className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-medium ${
-                posts.some(
-                  (p) => p.titulo.trim() && p.formato.trim() && p.canais.trim(),
-                )
-                  ? "bg-red-900 hover:bg-red-800 text-white"
-                  : "bg-gray-700 text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              Salvar Posts
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="cursor-pointer px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={validPosts.length === 0}
+                className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-medium ${
+                  validPosts.length > 0
+                    ? "bg-red-900 hover:bg-red-800 text-white"
+                    : "bg-gray-700 text-gray-400 cursor-not-allowed"
+                }`}
+              >
+                Salvar Posts
+              </button>
+            </div>
           </div>
         </div>
       </div>
