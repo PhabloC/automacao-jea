@@ -12,6 +12,7 @@ import {
   type Client,
 } from "@/lib/clients";
 import Sidebar from "@/components/sidebar/Sidebar";
+import Tabs from "@/components/tabs/Tabs";
 import { CloseIcon, EditIcon, SpinnerIcon, TrashIcon, UsersIcon } from "@/svg";
 import AlertModal, {
   type AlertModalType,
@@ -24,10 +25,16 @@ export default function ClientesPage() {
   // Inicializa com dados em cache (localStorage) para exibir imediatamente no F5
   const [clients, setClients] = useState<Client[]>(() => getClients());
   const [isLoading, setIsLoading] = useState(true);
-  const [newClientName, setNewClientName] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string>("");
+
+  // Modal de criar cliente (com abas Cliente + Contato)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newClientName, setNewClientName] = useState<string>("");
+  const [contactName, setContactName] = useState<string>("");
+  const [contactEmail, setContactEmail] = useState<string>("");
+  const [contactPhone, setContactPhone] = useState<string>("");
 
   // Estados da edição
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -124,7 +131,8 @@ export default function ClientesPage() {
       // Recarregar lista de clientes
       const updatedClients = await loadClientsFromWebhook();
       setClients(updatedClients);
-      setNewClientName("");
+      resetCreateModalForm();
+      setIsCreateModalOpen(false);
 
       // Mostrar modal de sucesso
       setModalState({
@@ -143,6 +151,21 @@ export default function ClientesPage() {
       });
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  const resetCreateModalForm = () => {
+    setNewClientName("");
+    setContactName("");
+    setContactEmail("");
+    setContactPhone("");
+    setError("");
+  };
+
+  const handleCloseCreateModal = () => {
+    if (!isAdding) {
+      resetCreateModalForm();
+      setIsCreateModalOpen(false);
     }
   };
 
@@ -282,48 +305,9 @@ export default function ClientesPage() {
               </div>
             </div>
 
-            {/* Adicionar Cliente */}
-            <div className="bg-gray-900/50 rounded-xl shadow-sm border border-red-900/30 p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">
-                Adicionar Novo Cliente
-              </h2>
-              <form onSubmit={handleAddClient} className="flex gap-3">
-                <input
-                  type="text"
-                  value={newClientName}
-                  onChange={(e) => {
-                    setNewClientName(e.target.value);
-                    setError("");
-                  }}
-                  placeholder="Nome do cliente"
-                  disabled={isAdding}
-                  className="flex-1 px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
-                />
-                <button
-                  type="submit"
-                  disabled={isAdding || !newClientName.trim()}
-                  className={`cursor-pointer px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
-                    isAdding || !newClientName.trim()
-                      ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                      : "bg-red-900 hover:bg-red-800 text-white"
-                  }`}
-                >
-                  {isAdding ? (
-                    <>
-                      <SpinnerIcon className="w-5 h-5" />
-                      Adicionando...
-                    </>
-                  ) : (
-                    "Adicionar"
-                  )}
-                </button>
-              </form>
-              {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
-            </div>
-
             {/* Lista de Clientes */}
             <div className="bg-gray-900/50 rounded-xl shadow-sm border border-red-900/30 p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-semibold text-white">
                     Clientes Cadastrados ({clients.length})
@@ -335,14 +319,25 @@ export default function ClientesPage() {
                     </span>
                   )}
                 </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Buscar cliente..."
-                  className="px-4 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2
-                   focus:ring-red-900 focus:border-red-900 w-64"
-                />
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Buscar cliente..."
+                    className="px-4 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 w-64"
+                    aria-label="Buscar cliente"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="cursor-pointer px-5 py-2.5 rounded-lg font-medium bg-red-900 hover:bg-red-800 text-white transition-colors flex items-center gap-2 shrink-0"
+                    aria-label="Novo cliente"
+                  >
+                    <UsersIcon className="w-5 h-5" />
+                    Novo Cliente
+                  </button>
+                </div>
               </div>
 
               {isLoading && clients.length === 0 ? (
@@ -490,6 +485,192 @@ export default function ClientesPage() {
                         </>
                       ) : (
                         "Salvar"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal de Novo Cliente (com abas Cliente + Contato) */}
+            {isCreateModalOpen && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                onClick={(e) =>
+                  e.target === e.currentTarget && handleCloseCreateModal()
+                }
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="create-client-modal-title"
+              >
+                <div
+                  className="bg-gray-900 border border-red-900/30 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between p-4 border-b border-gray-800 shrink-0">
+                    <h2
+                      id="create-client-modal-title"
+                      className="text-lg font-semibold text-white"
+                    >
+                      Cadastrar Cliente
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={handleCloseCreateModal}
+                      disabled={isAdding}
+                      className="cursor-pointer p-1 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+                      aria-label="Fechar"
+                    >
+                      <CloseIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className=" p-4 overflow-y-auto flex-1">
+                    <Tabs
+                      defaultTab="cliente"
+                      tabs={[
+                        {
+                          id: "cliente",
+                          label: "Cliente",
+                          content: (
+                            <div className="space-y-4">
+                              <label
+                                htmlFor="new-client-name"
+                                className="block text-sm font-medium text-gray-300"
+                              >
+                                Nome do cliente
+                              </label>
+                              <input
+                                id="new-client-name"
+                                type="text"
+                                value={newClientName}
+                                onChange={(e) => {
+                                  setNewClientName(e.target.value);
+                                  setError("");
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAddClient();
+                                  }
+                                }}
+                                disabled={isAdding}
+                                className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                                placeholder="Nome do cliente"
+                                autoFocus
+                                aria-required="true"
+                                aria-invalid={!!error}
+                                aria-describedby={
+                                  error ? "client-name-error" : undefined
+                                }
+                              />
+                              {error && (
+                                <p
+                                  id="client-name-error"
+                                  className="text-sm text-red-400"
+                                >
+                                  {error}
+                                </p>
+                              )}
+                            </div>
+                          ),
+                        },
+                        {
+                          id: "contato",
+                          label: "Contato",
+                          content: (
+                            <div className="space-y-4">
+                              <div>
+                                <label
+                                  htmlFor="contact-name"
+                                  className="block text-sm font-medium text-gray-300 mb-1"
+                                >
+                                  Nome
+                                </label>
+                                <input
+                                  id="contact-name"
+                                  type="text"
+                                  value={contactName}
+                                  onChange={(e) =>
+                                    setContactName(e.target.value)
+                                  }
+                                  disabled={isAdding}
+                                  className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                                  placeholder="Nome do contato"
+                                  aria-label="Nome do contato"
+                                />
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor="contact-email"
+                                  className="block text-sm font-medium text-gray-300 mb-1"
+                                >
+                                  E-mail
+                                </label>
+                                <input
+                                  id="contact-email"
+                                  type="email"
+                                  value={contactEmail}
+                                  onChange={(e) =>
+                                    setContactEmail(e.target.value)
+                                  }
+                                  disabled={isAdding}
+                                  className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                                  placeholder="email@exemplo.com"
+                                  aria-label="E-mail do contato"
+                                />
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor="contact-phone"
+                                  className="block text-sm font-medium text-gray-300 mb-1"
+                                >
+                                  Telefone
+                                </label>
+                                <input
+                                  id="contact-phone"
+                                  type="tel"
+                                  value={contactPhone}
+                                  onChange={(e) =>
+                                    setContactPhone(e.target.value)
+                                  }
+                                  disabled={isAdding}
+                                  className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                                  placeholder="(00) 00000-0000"
+                                  aria-label="Telefone do contato"
+                                />
+                              </div>
+                            </div>
+                          ),
+                        },
+                      ]}
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-800 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleCloseCreateModal}
+                      disabled={isAdding}
+                      className="cursor-pointer px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAddClient()}
+                      disabled={isAdding || !newClientName.trim()}
+                      className={`cursor-pointer px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                        isAdding || !newClientName.trim()
+                          ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                          : "bg-red-900 hover:bg-red-800 text-white"
+                      }`}
+                    >
+                      {isAdding ? (
+                        <>
+                          <SpinnerIcon className="w-4 h-4 animate-spin" />
+                          Cadastrando...
+                        </>
+                      ) : (
+                        "Cadastrar"
                       )}
                     </button>
                   </div>
