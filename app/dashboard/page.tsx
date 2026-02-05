@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/sidebar/Sidebar";
-import { SpinnerIcon, ShieldIcon, CalendarIcon } from "@/svg";
+import { SpinnerIcon, ShieldIcon, CalendarIcon, BarChartIcon } from "@/svg";
 import { automationDefinitions } from "@/lib/automations";
 
 export default function DashboardPage() {
@@ -20,9 +20,9 @@ export default function DashboardPage() {
   }, [user, authLoading, router]);
 
   const getAutomationIcon = (id: string) => {
-    if (id === "calendario") {
-      return <CalendarIcon className="w-6 h-6" />;
-    }
+    if (id === "calendario") return <CalendarIcon className="w-6 h-6" />;
+    if (id === "relatorios") return <BarChartIcon className="w-6 h-6" />;
+    return null;
   };
 
   // Mostrar loading enquanto verifica autenticação
