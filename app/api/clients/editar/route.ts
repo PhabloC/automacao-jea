@@ -36,14 +36,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Webhook n8n em produção pode aceitar só id e clientes. Envie apenas isso
-    // para evitar erro. Quando o workflow aceitar email e telefone, descomente abaixo.
     const payload: Record<string, string | number> = {
       id: idToSend,
       clientes: clientes.trim(),
     };
-    // if (typeof email === "string" && email.trim()) payload.email = email.trim();
-    // if (typeof telefone === "string" && telefone.trim()) payload.telefone = telefone.trim();
+    if (typeof email === "string" && email.trim()) payload.email = email.trim();
+    if (typeof telefone === "string" && telefone.trim())
+      payload.telefone = telefone.trim();
 
     console.log("[API Clients] Editando cliente:", payload);
 
