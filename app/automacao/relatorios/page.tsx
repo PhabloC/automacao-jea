@@ -43,10 +43,13 @@ export default function RelatoriosPage() {
   const router = useRouter();
   const [clients, setClients] = useState<RelatorioCliente[]>([]);
   const [filteredClients, setFilteredClients] = useState<RelatorioCliente[]>(
-    []
+    [],
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const RELATORIOS_PER_PAGE = 6;
   const [toast, setToast] = useState<{
     show: boolean;
     message: string;
@@ -99,7 +102,7 @@ export default function RelatoriosPage() {
     client: RelatorioCliente | null;
   }>({ open: false, client: null });
   const [configPlatform, setConfigPlatform] = useState<"meta" | "google">(
-    "meta"
+    "meta",
   );
   const [configMessages, setConfigMessages] = useState({
     meta: "",
@@ -158,16 +161,29 @@ export default function RelatoriosPage() {
       clients.filter(
         (c) =>
           c.nome.toLowerCase().includes(term) ||
-          c.email.toLowerCase().includes(term)
-      )
+          c.email.toLowerCase().includes(term),
+      ),
     );
   }, [searchTerm, clients]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filteredClients.length]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredClients.length / RELATORIOS_PER_PAGE),
+  );
+  const paginatedClients = filteredClients.slice(
+    (currentPage - 1) * RELATORIOS_PER_PAGE,
+    currentPage * RELATORIOS_PER_PAGE,
+  );
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ show: true, message, type });
     setTimeout(
       () => setToast({ show: false, message: "", type: "success" }),
-      3000
+      3000,
     );
   };
 
@@ -271,7 +287,7 @@ export default function RelatoriosPage() {
         await updateRelatorioCliente(
           clientModal.client.id,
           formData,
-          accessToken
+          accessToken,
         );
         showToast("Cliente atualizado com sucesso", "success");
       }
@@ -279,7 +295,7 @@ export default function RelatoriosPage() {
       await loadClients();
     } catch (err) {
       setFormError(
-        err instanceof Error ? err.message : "Erro ao salvar. Tente novamente."
+        err instanceof Error ? err.message : "Erro ao salvar. Tente novamente.",
       );
     } finally {
       setIsSaving(false);
@@ -289,26 +305,26 @@ export default function RelatoriosPage() {
   const handleToggleField = async (
     client: RelatorioCliente,
     field: "campanha_meta" | "saldo_meta" | "campanha_google",
-    value: boolean
+    value: boolean,
   ) => {
     try {
       await updateRelatorioCliente(client.id, { [field]: value }, accessToken);
       setClients((prev) =>
-        prev.map((c) => (c.id === client.id ? { ...c, [field]: value } : c))
+        prev.map((c) => (c.id === client.id ? { ...c, [field]: value } : c)),
       );
       setFilteredClients((prev) =>
-        prev.map((c) => (c.id === client.id ? { ...c, [field]: value } : c))
+        prev.map((c) => (c.id === client.id ? { ...c, [field]: value } : c)),
       );
       showToast(
         `${field.replace("_", " ")} ${
           value ? "ativado" : "desativado"
         } com sucesso`,
-        "success"
+        "success",
       );
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : "Erro ao atualizar",
-        "error"
+        "error",
       );
     }
   };
@@ -330,7 +346,7 @@ export default function RelatoriosPage() {
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : "Erro ao excluir",
-        "error"
+        "error",
       );
     } finally {
       setIsDeleting(false);
@@ -363,7 +379,7 @@ export default function RelatoriosPage() {
 
   const handleConfigMessageChange = (
     platform: "meta" | "google",
-    value: string
+    value: string,
   ) => {
     setConfigMessages((prev) => ({ ...prev, [platform]: value }));
     setConfigHasUnsaved(true);
@@ -396,7 +412,7 @@ export default function RelatoriosPage() {
           mensagem_meta: configMessages.meta || null,
           mensagem_google: configMessages.google || null,
         },
-        accessToken
+        accessToken,
       );
       setOriginalConfigMessages({ ...configMessages });
       setConfigHasUnsaved(false);
@@ -406,7 +422,7 @@ export default function RelatoriosPage() {
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : "Erro ao salvar mensagens",
-        "error"
+        "error",
       );
     } finally {
       setIsSavingConfig(false);
@@ -490,7 +506,7 @@ export default function RelatoriosPage() {
                   <thead className="bg-gray-800/80">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Nome
+                        Cliente
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         E-mail
@@ -537,7 +553,7 @@ export default function RelatoriosPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredClients.map((client) => (
+                      paginatedClients.map((client) => (
                         <tr
                           key={client.id}
                           className="bg-gray-800/30 hover:bg-gray-800/50 transition-colors"
@@ -558,7 +574,7 @@ export default function RelatoriosPage() {
                                 handleToggleField(
                                   client,
                                   "campanha_meta",
-                                  !client.campanha_meta
+                                  !client.campanha_meta,
                                 )
                               }
                               disabled={!client.conta_anuncio_meta}
@@ -578,7 +594,7 @@ export default function RelatoriosPage() {
                                 handleToggleField(
                                   client,
                                   "saldo_meta",
-                                  !client.saldo_meta
+                                  !client.saldo_meta,
                                 )
                               }
                               disabled={!client.conta_anuncio_meta}
@@ -598,7 +614,7 @@ export default function RelatoriosPage() {
                                 handleToggleField(
                                   client,
                                   "campanha_google",
-                                  !client.campanha_google
+                                  !client.campanha_google,
                                 )
                               }
                               disabled={!client.conta_anuncio_google}
@@ -649,6 +665,44 @@ export default function RelatoriosPage() {
                   </tbody>
                 </table>
               </div>
+              {!isLoading && filteredClients.length > 0 && totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-red-900/20 bg-gray-800/50">
+                  <p className="text-sm text-gray-400">
+                    Mostrando{" "}
+                    {(currentPage - 1) * RELATORIOS_PER_PAGE + 1} a{" "}
+                    {Math.min(
+                      currentPage * RELATORIOS_PER_PAGE,
+                      filteredClients.length,
+                    )}{" "}
+                    de {filteredClients.length} relatórios
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                      className="cursor-pointer px-3 py-1.5 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-red-900/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                      aria-label="Página anterior"
+                    >
+                      Anterior
+                    </button>
+                    <span className="text-sm text-gray-400 px-2">
+                      Página {currentPage} de {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={currentPage >= totalPages}
+                      className="cursor-pointer px-3 py-1.5 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-red-900/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                      aria-label="Próxima página"
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -705,7 +759,7 @@ export default function RelatoriosPage() {
                 </button>
               </div>
             </>,
-            document.body
+            document.body,
           );
         })()}
 
@@ -809,19 +863,25 @@ export default function RelatoriosPage() {
                       <span className="block text-xs font-medium text-gray-500 uppercase mb-0.5">
                         Nome
                       </span>
-                      <p className="text-sm text-gray-300">{formData.nome || "—"}</p>
+                      <p className="text-sm text-gray-300">
+                        {formData.nome || "—"}
+                      </p>
                     </div>
                     <div>
                       <span className="block text-xs font-medium text-gray-500 uppercase mb-0.5">
                         E-mail
                       </span>
-                      <p className="text-sm text-gray-300">{formData.email || "—"}</p>
+                      <p className="text-sm text-gray-300">
+                        {formData.email || "—"}
+                      </p>
                     </div>
                     <div>
                       <span className="block text-xs font-medium text-gray-500 uppercase mb-0.5">
                         Telefone
                       </span>
-                      <p className="text-sm text-gray-300">{formData.telefone || "—"}</p>
+                      <p className="text-sm text-gray-300">
+                        {formData.telefone || "—"}
+                      </p>
                     </div>
                   </div>
                 </>
@@ -1087,7 +1147,7 @@ export default function RelatoriosPage() {
                             {item.label}
                           </span>
                         </button>
-                      )
+                      ),
                     )}
                   </div>
                 </div>
@@ -1196,8 +1256,8 @@ function FormToggleWithIcons({
         disabled
           ? "cursor-not-allowed bg-gray-700 opacity-50"
           : checked
-          ? "cursor-pointer bg-red-600"
-          : "cursor-pointer bg-gray-600"
+            ? "cursor-pointer bg-red-600"
+            : "cursor-pointer bg-gray-600"
       }`}
       aria-label={checked ? "Desativar" : "Ativar"}
       aria-pressed={checked}
