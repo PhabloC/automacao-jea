@@ -804,67 +804,25 @@ export default function RelatoriosPage() {
                 </>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-gray-800/50 rounded-lg border border-red-900/20">
                     <div>
-                      <label
-                        htmlFor="rel-nome"
-                        className="block text-sm font-medium text-gray-300 mb-1"
-                      >
-                        Nome *
-                      </label>
-                      <input
-                        id="rel-nome"
-                        type="text"
-                        required
-                        value={formData.nome}
-                        onChange={(e) =>
-                          setFormData((p) => ({ ...p, nome: e.target.value }))
-                        }
-                        className="w-full px-3 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900"
-                      />
+                      <span className="block text-xs font-medium text-gray-500 uppercase mb-0.5">
+                        Nome
+                      </span>
+                      <p className="text-sm text-gray-300">{formData.nome || "—"}</p>
                     </div>
                     <div>
-                      <label
-                        htmlFor="rel-email"
-                        className="block text-sm font-medium text-gray-300 mb-1"
-                      >
-                        E-mail *
-                      </label>
-                      <input
-                        id="rel-email"
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) =>
-                          setFormData((p) => ({
-                            ...p,
-                            email: e.target.value,
-                          }))
-                        }
-                        className="w-full px-3 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900"
-                      />
+                      <span className="block text-xs font-medium text-gray-500 uppercase mb-0.5">
+                        E-mail
+                      </span>
+                      <p className="text-sm text-gray-300">{formData.email || "—"}</p>
                     </div>
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="rel-telefone"
-                      className="block text-sm font-medium text-gray-300 mb-1"
-                    >
-                      Telefone *
-                    </label>
-                    <input
-                      id="rel-telefone"
-                      type="tel"
-                      required
-                      value={formData.telefone}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          telefone: e.target.value,
-                        }))
-                      }
-                      className="w-full px-3 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900"
-                    />
+                    <div>
+                      <span className="block text-xs font-medium text-gray-500 uppercase mb-0.5">
+                        Telefone
+                      </span>
+                      <p className="text-sm text-gray-300">{formData.telefone || "—"}</p>
+                    </div>
                   </div>
                 </>
               )}
