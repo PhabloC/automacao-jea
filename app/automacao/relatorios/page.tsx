@@ -301,15 +301,22 @@ export default function RelatoriosPage() {
       setFormError("Selecione pelo menos um dia de envio");
       return;
     }
+    const payload = { ...formData };
+    if (payload.campanha_meta && !payload.mensagem_meta?.trim()) {
+      payload.mensagem_meta = MESSAGE_TEMPLATES.meta;
+    }
+    if (payload.campanha_google && !payload.mensagem_google?.trim()) {
+      payload.mensagem_google = MESSAGE_TEMPLATES.google;
+    }
     setIsSaving(true);
     try {
       if (clientModal.mode === "add") {
-        await createRelatorioCliente(formData, accessToken);
+        await createRelatorioCliente(payload, accessToken);
         showToast("Cliente criado com sucesso", "success");
       } else if (clientModal.client) {
         await updateRelatorioCliente(
           clientModal.client.id,
-          formData,
+          payload,
           accessToken,
         );
         showToast("Cliente atualizado com sucesso", "success");
