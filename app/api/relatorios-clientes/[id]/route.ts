@@ -41,6 +41,10 @@ function mapRowToCliente(row: Record<string, unknown>) {
     quantidade_dias_relatorio: row.quantidade_dias_relatorio ?? 7,
     campanha_meta: !!row.campanha_meta,
     saldo_meta: !!row.saldo_meta,
+    avisar_saldo_abaixo_de:
+      row.avisar_saldo_abaixo_de != null
+        ? Number(row.avisar_saldo_abaixo_de)
+        : null,
     campanha_google: !!row.campanha_google,
     mensagem_meta: row.mensagem_meta ?? null,
     mensagem_google: row.mensagem_google ?? null,
@@ -82,6 +86,7 @@ export async function PATCH(
       "quantidade_dias_relatorio",
       "campanha_meta",
       "saldo_meta",
+      "avisar_saldo_abaixo_de",
       "campanha_google",
       "mensagem_meta",
       "mensagem_google",
@@ -104,6 +109,13 @@ export async function PATCH(
           key === "mensagem_google"
         ) {
           update[key] = value != null && value !== "" ? String(value) : null;
+        } else if (key === "avisar_saldo_abaixo_de") {
+          if (value == null || value === "") {
+            update[key] = null;
+          } else {
+            const n = Number(value);
+            update[key] = Number.isNaN(n) ? null : n;
+          }
         } else if (
           key === "campanha_meta" ||
           key === "saldo_meta" ||

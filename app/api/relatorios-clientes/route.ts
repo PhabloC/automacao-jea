@@ -68,6 +68,10 @@ export async function GET(request: NextRequest) {
       quantidade_dias_relatorio: row.quantidade_dias_relatorio ?? 7,
       campanha_meta: !!row.campanha_meta,
       saldo_meta: !!row.saldo_meta,
+      avisar_saldo_abaixo_de:
+        row.avisar_saldo_abaixo_de != null
+          ? Number(row.avisar_saldo_abaixo_de)
+          : null,
       campanha_google: !!row.campanha_google,
       mensagem_meta: row.mensagem_meta ?? null,
       mensagem_google: row.mensagem_google ?? null,
@@ -109,6 +113,7 @@ export async function POST(request: NextRequest) {
       quantidade_dias_relatorio,
       campanha_meta,
       saldo_meta,
+      avisar_saldo_abaixo_de,
       campanha_google,
       mensagem_meta,
       mensagem_google,
@@ -137,7 +142,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const row = {
+    const saldoAbaixoNum =
+      avisar_saldo_abaixo_de != null && avisar_saldo_abaixo_de !== ""
+        ? Number(avisar_saldo_abaixo_de)
+        : null;
+
+    const row: Record<string, unknown> = {
       nome: String(nome).trim(),
       email: String(email).trim(),
       telefone: String(telefone).trim(),
@@ -155,6 +165,9 @@ export async function POST(request: NextRequest) {
       mensagem_meta: mensagem_meta != null ? String(mensagem_meta) : null,
       mensagem_google: mensagem_google != null ? String(mensagem_google) : null,
     };
+    if (saldoAbaixoNum != null && !Number.isNaN(saldoAbaixoNum)) {
+      row.avisar_saldo_abaixo_de = saldoAbaixoNum;
+    }
 
     const { data, error } = await supabaseAdmin
       .from(TABLE)
@@ -181,6 +194,10 @@ export async function POST(request: NextRequest) {
       quantidade_dias_relatorio: data.quantidade_dias_relatorio ?? 7,
       campanha_meta: !!data.campanha_meta,
       saldo_meta: !!data.saldo_meta,
+      avisar_saldo_abaixo_de:
+        data.avisar_saldo_abaixo_de != null
+          ? Number(data.avisar_saldo_abaixo_de)
+          : null,
       campanha_google: !!data.campanha_google,
       mensagem_meta: data.mensagem_meta ?? null,
       mensagem_google: data.mensagem_google ?? null,

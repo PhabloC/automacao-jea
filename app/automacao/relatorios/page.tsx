@@ -77,6 +77,7 @@ export default function RelatoriosPage() {
     quantidade_dias_relatorio: 7,
     campanha_meta: false,
     saldo_meta: false,
+    avisar_saldo_abaixo_de: null,
     campanha_google: false,
   });
   const [formError, setFormError] = useState("");
@@ -211,6 +212,7 @@ export default function RelatoriosPage() {
       quantidade_dias_relatorio: 7,
       campanha_meta: false,
       saldo_meta: false,
+      avisar_saldo_abaixo_de: null,
       campanha_google: false,
     });
     setFormError("");
@@ -249,6 +251,7 @@ export default function RelatoriosPage() {
       quantidade_dias_relatorio: client.quantidade_dias_relatorio,
       campanha_meta: client.campanha_meta,
       saldo_meta: client.saldo_meta,
+      avisar_saldo_abaixo_de: client.avisar_saldo_abaixo_de ?? null,
       campanha_google: client.campanha_google,
     });
     setFormError("");
@@ -260,6 +263,26 @@ export default function RelatoriosPage() {
       setSelectedN8nClientId("");
       setClientModal({ open: false, mode: "add", client: null });
     }
+  };
+
+  const formatCurrencyBrl = (n: number | null): string => {
+    if (n == null || Number.isNaN(n)) return "";
+    return `R$ ${n.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
+  const parseCurrencyBrlToNumber = (input: string): number | null => {
+    const digits = input.replace(/\D/g, "");
+    if (digits.length === 0) return null;
+    const value = parseInt(digits, 10) / 100;
+    return Number.isNaN(value) ? null : value;
+  };
+
+  const handleAvisarSaldoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const num = parseCurrencyBrlToNumber(e.target.value);
+    setFormData((p) => ({ ...p, avisar_saldo_abaixo_de: num }));
   };
 
   const toggleDay = (day: number) => {
@@ -1003,11 +1026,36 @@ export default function RelatoriosPage() {
                         setFormData((p) => ({
                           ...p,
                           saldo_meta: !p.saldo_meta,
+                          ...(p.saldo_meta
+                            ? { avisar_saldo_abaixo_de: null as number | null }
+                            : {}),
                         }))
                       }
                       disabled={!formData.conta_anuncio_meta}
                     />
                   </div>
+                  {formData.saldo_meta && (
+                    <div className="pl-1">
+                      <label
+                        htmlFor="rel-avisar-saldo"
+                        className="block text-sm font-medium text-gray-300 mb-1"
+                      >
+                        Avisar saldo abaixo de:
+                      </label>
+                      <input
+                        id="rel-avisar-saldo"
+                        type="text"
+                        inputMode="decimal"
+                        value={formatCurrencyBrl(
+                          formData.avisar_saldo_abaixo_de ?? null
+                        )}
+                        onChange={handleAvisarSaldoChange}
+                        placeholder="R$ 0,00"
+                        className="w-full max-w-xs px-3 py-2 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900"
+                        aria-label="Avisar saldo abaixo de (valor em reais)"
+                      />
+                    </div>
+                  )}
                   <div className="flex items-center gap-3">
                     <span className="text-gray-400 text-sm">
                       Campanhas Google

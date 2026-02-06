@@ -10,6 +10,8 @@ export interface RelatorioCliente {
   quantidade_dias_relatorio: number;
   campanha_meta: boolean;
   saldo_meta: boolean;
+  /** Valor em reais: avisar quando saldo Meta estiver abaixo deste valor (número). */
+  avisar_saldo_abaixo_de: number | null;
   campanha_google: boolean;
   mensagem_meta: string | null;
   mensagem_google: string | null;
@@ -21,6 +23,7 @@ export type RelatorioClienteCreate = Omit<
 > & {
   mensagem_meta?: string | null;
   mensagem_google?: string | null;
+  avisar_saldo_abaixo_de?: number | null;
 };
 
 export type RelatorioClienteUpdate = Partial<Omit<RelatorioCliente, "id">>;
