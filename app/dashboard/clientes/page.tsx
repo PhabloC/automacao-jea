@@ -28,15 +28,17 @@ export default function ClientesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string>("");
 
-  // Modal de criar cliente (nome, email, telefone)
+  // Modal de criar cliente (empresa, nome contato, telefone, email)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newClientName, setNewClientName] = useState<string>("");
+  const [newClientName, setNewClientName] = useState<string>(""); // Empresa
+  const [newContactName, setNewContactName] = useState<string>(""); // Nome do contato
   const [newClientEmail, setNewClientEmail] = useState<string>("");
   const [newClientPhone, setNewClientPhone] = useState<string>("");
 
   // Estados da edição
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [editName, setEditName] = useState<string>("");
+  const [editName, setEditName] = useState<string>(""); // Empresa
+  const [editContactName, setEditContactName] = useState<string>(""); // Nome do contato
   const [editEmail, setEditEmail] = useState<string>("");
   const [editPhone, setEditPhone] = useState<string>("");
   const [editError, setEditError] = useState<string>("");
@@ -95,7 +97,7 @@ export default function ClientesPage() {
     }
 
     if (!newClientName.trim()) {
-      setError("Por favor, insira um nome para o cliente");
+      setError("Por favor, insira a empresa");
       return;
     }
 
@@ -110,6 +112,7 @@ export default function ClientesPage() {
 
     // Mostrar modal de confirmação
     const trimmedName = newClientName.trim();
+    const nomeContato = newContactName.trim() || undefined;
     const email = newClientEmail.trim() || undefined;
     const telefone = newClientPhone.trim() || undefined;
     setModalState({
@@ -120,6 +123,7 @@ export default function ClientesPage() {
       onConfirm: async () => {
         await executeCreateClient({
           name: trimmedName,
+          nome_contato: nomeContato,
           email,
           telefone,
         });
@@ -129,6 +133,7 @@ export default function ClientesPage() {
 
   const executeCreateClient = async (params: {
     name: string;
+    nome_contato?: string;
     email?: string;
     telefone?: string;
   }) => {
@@ -166,6 +171,7 @@ export default function ClientesPage() {
 
   const resetCreateModalForm = () => {
     setNewClientName("");
+    setNewContactName("");
     setNewClientEmail("");
     setNewClientPhone("");
     setError("");
@@ -209,6 +215,7 @@ export default function ClientesPage() {
   const handleOpenEdit = (client: Client) => {
     setEditingClient(client);
     setEditName(client.name);
+    setEditContactName(client.nome_contato ?? "");
     setEditEmail(client.email ?? "");
     setEditPhone(client.telefone ?? "");
     setEditError("");
@@ -218,6 +225,7 @@ export default function ClientesPage() {
     if (!isSavingEdit) {
       setEditingClient(null);
       setEditName("");
+      setEditContactName("");
       setEditEmail("");
       setEditPhone("");
       setEditError("");
@@ -254,6 +262,7 @@ export default function ClientesPage() {
     try {
       await updateClientInWebhook(editingClient.id, {
         name: trimmedName,
+        nome_contato: editContactName.trim() || undefined,
         email: editEmail.trim() || undefined,
         telefone: editPhone.trim() || undefined,
       });
@@ -474,7 +483,7 @@ export default function ClientesPage() {
                         htmlFor="edit-client-name"
                         className="block text-sm font-medium text-gray-300 mb-1"
                       >
-                        Nome do cliente *
+                        Empresa *
                       </label>
                       <input
                         id="edit-client-name"
@@ -490,26 +499,26 @@ export default function ClientesPage() {
                         }}
                         disabled={isSavingEdit}
                         className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
-                        placeholder="Nome do cliente"
+                        placeholder="Nome da empresa"
                         autoFocus
                       />
                     </div>
                     <div>
                       <label
-                        htmlFor="edit-client-email"
+                        htmlFor="edit-contact-name"
                         className="block text-sm font-medium text-gray-300 mb-1"
                       >
-                        E-mail
+                        Nome do contato
                       </label>
                       <input
-                        id="edit-client-email"
-                        type="email"
-                        value={editEmail}
-                        onChange={(e) => setEditEmail(e.target.value)}
+                        id="edit-contact-name"
+                        type="text"
+                        value={editContactName}
+                        onChange={(e) => setEditContactName(e.target.value)}
                         disabled={isSavingEdit}
                         className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
-                        placeholder="email@exemplo.com"
-                        aria-label="E-mail do cliente"
+                        placeholder="Nome do contato"
+                        aria-label="Nome do contato"
                       />
                     </div>
                     <div>
@@ -517,7 +526,7 @@ export default function ClientesPage() {
                         htmlFor="edit-client-phone"
                         className="block text-sm font-medium text-gray-300 mb-1"
                       >
-                        Telefone
+                        Telefone do contato
                       </label>
                       <input
                         id="edit-client-phone"
@@ -539,8 +548,26 @@ export default function ClientesPage() {
                         disabled={isSavingEdit}
                         className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
                         placeholder="(00) 00000-0000"
-                        aria-label="Telefone do cliente (apenas números)"
+                        aria-label="Telefone do contato (apenas números)"
                         maxLength={16}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="edit-client-email"
+                        className="block text-sm font-medium text-gray-300 mb-1"
+                      >
+                        E-mail do contato
+                      </label>
+                      <input
+                        id="edit-client-email"
+                        type="email"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        disabled={isSavingEdit}
+                        className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                        placeholder="email@exemplo.com"
+                        aria-label="E-mail do contato"
                       />
                     </div>
                     {editError && (
@@ -618,7 +645,7 @@ export default function ClientesPage() {
                         htmlFor="new-client-name"
                         className="block text-sm font-medium text-gray-300 mb-1"
                       >
-                        Nome do cliente *
+                        Empresa *
                       </label>
                       <input
                         id="new-client-name"
@@ -636,7 +663,7 @@ export default function ClientesPage() {
                         }}
                         disabled={isAdding}
                         className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
-                        placeholder="Nome do cliente"
+                        placeholder="Nome da empresa"
                         autoFocus
                         aria-required="true"
                         aria-invalid={!!error}
@@ -655,20 +682,20 @@ export default function ClientesPage() {
                     </div>
                     <div>
                       <label
-                        htmlFor="new-client-email"
+                        htmlFor="new-contact-name"
                         className="block text-sm font-medium text-gray-300 mb-1"
                       >
-                        E-mail
+                        Nome do contato
                       </label>
                       <input
-                        id="new-client-email"
-                        type="email"
-                        value={newClientEmail}
-                        onChange={(e) => setNewClientEmail(e.target.value)}
+                        id="new-contact-name"
+                        type="text"
+                        value={newContactName}
+                        onChange={(e) => setNewContactName(e.target.value)}
                         disabled={isAdding}
                         className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
-                        placeholder="email@exemplo.com"
-                        aria-label="E-mail do cliente"
+                        placeholder="Nome do contato"
+                        aria-label="Nome do contato"
                       />
                     </div>
                     <div>
@@ -676,7 +703,7 @@ export default function ClientesPage() {
                         htmlFor="new-client-phone"
                         className="block text-sm font-medium text-gray-300 mb-1"
                       >
-                        Telefone
+                        Telefone do contato
                       </label>
                       <input
                         id="new-client-phone"
@@ -698,8 +725,26 @@ export default function ClientesPage() {
                         disabled={isAdding}
                         className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
                         placeholder="(00) 00000-0000"
-                        aria-label="Telefone do cliente (apenas números)"
+                        aria-label="Telefone do contato (apenas números)"
                         maxLength={16}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="new-client-email"
+                        className="block text-sm font-medium text-gray-300 mb-1"
+                      >
+                        E-mail do contato
+                      </label>
+                      <input
+                        id="new-client-email"
+                        type="email"
+                        value={newClientEmail}
+                        onChange={(e) => setNewClientEmail(e.target.value)}
+                        disabled={isAdding}
+                        className="w-full px-4 py-3 rounded-lg border bg-gray-800 text-white border-red-900/50 focus:ring-2 focus:ring-red-900 focus:border-red-900 disabled:opacity-50"
+                        placeholder="email@exemplo.com"
+                        aria-label="E-mail do contato"
                       />
                     </div>
                   </div>

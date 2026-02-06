@@ -47,12 +47,14 @@ export async function GET(request: NextRequest) {
     type WebhookItem = {
       id?: unknown;
       clientes?: string;
+      nome_contato?: string;
       email?: string;
       telefone?: string;
     };
     type ClientItem = {
       id: string;
       name: string;
+      nome_contato?: string;
       email?: string;
       telefone?: string;
     };
@@ -65,6 +67,10 @@ export async function GET(request: NextRequest) {
           .map((item: WebhookItem) => ({
             id: String(item.id),
             name: (item.clientes || "").trim(),
+            nome_contato:
+              typeof item.nome_contato === "string"
+                ? item.nome_contato.trim()
+                : undefined,
             email:
               typeof item.email === "string" ? item.email.trim() : undefined,
             telefone:

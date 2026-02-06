@@ -6,15 +6,16 @@ const WEBHOOK_URL =
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { clientes, email, telefone } = body as {
+    const { clientes, nome_contato, email, telefone } = body as {
       clientes?: unknown;
+      nome_contato?: unknown;
       email?: unknown;
       telefone?: unknown;
     };
 
     if (!clientes || typeof clientes !== "string" || !clientes.trim()) {
       return NextResponse.json(
-        { error: "Nome do cliente é obrigatório" },
+        { error: "Empresa é obrigatória" },
         { status: 400 }
       );
     }
@@ -22,6 +23,8 @@ export async function POST(request: NextRequest) {
     const payload: Record<string, string> = {
       clientes: clientes.trim(),
     };
+    if (typeof nome_contato === "string" && nome_contato.trim())
+      payload.nome_contato = nome_contato.trim();
     if (typeof email === "string" && email.trim()) payload.email = email.trim();
     if (typeof telefone === "string" && telefone.trim())
       payload.telefone = telefone.trim();

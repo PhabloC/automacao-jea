@@ -1,7 +1,8 @@
-// Tipos para clientes (n8n pode retornar email e telefone)
+// Tipos para clientes (n8n pode retornar nome_contato, email e telefone)
 export interface Client {
   id: string;
   name: string;
+  nome_contato?: string;
   email?: string;
   telefone?: string;
 }
@@ -130,6 +131,7 @@ export async function loadClientsFromWebhook(): Promise<Client[]> {
 // Parâmetros para criação de cliente no webhook n8n
 export interface CreateClientParams {
   name: string;
+  nome_contato?: string;
   email?: string;
   telefone?: string;
 }
@@ -140,6 +142,10 @@ export async function createClientInWebhook(
   params: CreateClientParams | string
 ): Promise<Client | null> {
   const name = typeof params === "string" ? params.trim() : params.name.trim();
+  const nome_contato =
+    typeof params === "string"
+      ? undefined
+      : params.nome_contato?.trim() || undefined;
   const email =
     typeof params === "string" ? undefined : params.email?.trim() || undefined;
   const telefone =
@@ -149,6 +155,7 @@ export async function createClientInWebhook(
 
   try {
     const body: Record<string, string> = { clientes: name };
+    if (nome_contato) body.nome_contato = nome_contato;
     if (email) body.email = email;
     if (telefone) body.telefone = telefone;
 
@@ -188,6 +195,7 @@ export async function createClientInWebhook(
 // Parâmetros para edição de cliente no webhook n8n
 export interface UpdateClientParams {
   name: string;
+  nome_contato?: string;
   email?: string;
   telefone?: string;
 }
@@ -199,6 +207,10 @@ export async function updateClientInWebhook(
 ): Promise<Client | null> {
   const name =
     typeof params === "string" ? params.trim() : params.name.trim();
+  const nome_contato =
+    typeof params === "string"
+      ? undefined
+      : params.nome_contato?.trim() || undefined;
   const email =
     typeof params === "string" ? undefined : params.email?.trim() || undefined;
   const telefone =
@@ -216,6 +228,7 @@ export async function updateClientInWebhook(
       id: idNumber,
       clientes: name,
     };
+    if (nome_contato) body.nome_contato = nome_contato;
     if (email) body.email = email;
     if (telefone) body.telefone = telefone;
 
