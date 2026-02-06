@@ -101,6 +101,43 @@ export async function deleteRelatorioCliente(
   }
 }
 
+export interface SyncRelatoriosByClienteParams {
+  oldNome: string;
+  oldEmail: string;
+  newNome: string;
+  newEmail: string;
+  newTelefone: string;
+}
+
+/**
+ * Sincroniza nome, e-mail e telefone nos relatórios vinculados a um cliente
+ * (quando o cliente é atualizado na página de clientes).
+ */
+export async function syncRelatoriosByCliente(
+  params: SyncRelatoriosByClienteParams,
+  accessToken?: string | null
+): Promise<{ updatedCount: number }> {
+  const response = await fetch("/api/relatorios-clientes/sync", {
+    method: "POST",
+    headers: getHeaders(accessToken),
+    body: JSON.stringify({
+      oldNome: params.oldNome.trim(),
+      oldEmail: params.oldEmail.trim(),
+      newNome: params.newNome.trim(),
+      newEmail: params.newEmail.trim(),
+      newTelefone: params.newTelefone.trim(),
+    }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(
+      err.error || `Erro ao sincronizar relatórios: ${response.status}`
+    );
+  }
+  const data = await response.json();
+  return { updatedCount: data.updatedCount ?? 0 };
+}
+
 // Templates de mensagem para Meta e Google
 export const MESSAGE_TEMPLATES = {
   meta: `💰 *Investimento Total:* {total_investido}

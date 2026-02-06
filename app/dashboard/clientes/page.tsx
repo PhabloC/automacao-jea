@@ -11,6 +11,7 @@ import {
   getClients,
   type Client,
 } from "@/lib/clients";
+import { syncRelatoriosByCliente } from "@/lib/relatorios-clientes";
 import Sidebar from "@/components/sidebar/Sidebar";
 import { CloseIcon, EditIcon, SpinnerIcon, TrashIcon, UsersIcon } from "@/svg";
 import AlertModal, {
@@ -18,7 +19,7 @@ import AlertModal, {
 } from "@/components/alert-modal/AlertModal";
 
 export default function ClientesPage() {
-  const { user, loading: authLoading, hasPermission } = useAuth();
+  const { user, loading: authLoading, hasPermission, session } = useAuth();
   const router = useRouter();
 
   // Inicializa com dados em cache (localStorage) para exibir imediatamente no F5
@@ -266,6 +267,23 @@ export default function ClientesPage() {
         email: editEmail.trim() || undefined,
         telefone: editPhone.trim() || undefined,
       });
+
+      const accessToken = session?.access_token ?? null;
+      try {
+        await syncRelatoriosByCliente(
+          {
+            oldNome: editingClient.name,
+            oldEmail: editingClient.email ?? "",
+            newNome: trimmedName,
+            newEmail: editEmail.trim(),
+            newTelefone: editPhone.trim(),
+          },
+          accessToken
+        );
+      } catch (syncErr) {
+        console.error("Erro ao sincronizar relatórios com o cliente:", syncErr);
+      }
+
       const updatedClients = await loadClientsFromWebhook();
       setClients(updatedClients);
       handleCloseEdit();
