@@ -315,6 +315,32 @@ function FieldSelect<T extends string>({
   );
 }
 
+function FieldDate({
+  id,
+  value,
+  onChange,
+  min,
+  ariaLabel,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  min?: string;
+  ariaLabel?: string;
+}) {
+  return (
+    <input
+      id={id}
+      type="date"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      min={min}
+      className="w-full px-4 py-2.5 rounded-xl bg-gray-800/80 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-600/50 scheme-dark"
+      aria-label={ariaLabel ?? id}
+    />
+  );
+}
+
 function Step1VisaoGeral({
   formData,
   updateField,
@@ -640,29 +666,31 @@ function Step3Oferta({
       </div>
       <div>
         <FieldLabel id="dataAbertura">Data de abertura</FieldLabel>
-        <FieldText
+        <FieldDate
           id="dataAbertura"
           value={formData.dataAbertura}
           onChange={(v) => updateField("dataAbertura", v)}
-          placeholder="Ex: 01/03/2025"
+          ariaLabel="Data de abertura"
         />
       </div>
       <div>
         <FieldLabel id="dataFechamento">Data de fechamento</FieldLabel>
-        <FieldText
+        <FieldDate
           id="dataFechamento"
           value={formData.dataFechamento}
           onChange={(v) => updateField("dataFechamento", v)}
-          placeholder="Ex: 15/03/2025"
+          min={formData.dataAbertura || undefined}
+          ariaLabel="Data de fechamento"
         />
       </div>
       <div>
         <FieldLabel id="dataInicioAulas">Data de início das aulas</FieldLabel>
-        <FieldText
+        <FieldDate
           id="dataInicioAulas"
           value={formData.dataInicioAulas}
           onChange={(v) => updateField("dataInicioAulas", v)}
-          placeholder="Ex: 20/03/2025"
+          min={formData.dataFechamento || undefined}
+          ariaLabel="Data de início das aulas"
         />
       </div>
     </div>
