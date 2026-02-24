@@ -3,6 +3,10 @@ export type ModalidadeCurso = "Ao vivo" | "Gravado" | "Híbrido";
 export type PfPj = "PF" | "PJ" | "Ambos";
 
 export interface FormularioEstrategicoData {
+  // Etapa 0 - Identificação
+  nome: string;
+  email: string;
+  telefone: string;
   // Etapa 1 - Visão geral
   nomeOficialCurso: string;
   subtituloPromessa: string;
@@ -18,14 +22,13 @@ export interface FormularioEstrategicoData {
   alunoIdeal: string;
   cargo: string;
   area: string;
-  nivelExperiencia: string;
+  nivelExperiencia: NivelCurso;
   faixaSalarial: string;
   jaTentouResolver: string;
   maiorDorEmocional: string;
   maiorMedo: string;
   oQueFariaAdiar: string;
   pfPjOuAmbos: PfPj;
-  focoDiversidadeBolsas: string;
   // Etapa 3 - Oferta
   valorCheio: string;
   valorPromocional: string;
@@ -47,6 +50,9 @@ export interface FormularioEstrategicoData {
 }
 
 export const INITIAL_FORM_DATA: FormularioEstrategicoData = {
+  nome: "",
+  email: "",
+  telefone: "",
   nomeOficialCurso: "",
   subtituloPromessa: "",
   problemaEspecifico: "",
@@ -60,14 +66,13 @@ export const INITIAL_FORM_DATA: FormularioEstrategicoData = {
   alunoIdeal: "",
   cargo: "",
   area: "",
-  nivelExperiencia: "",
+  nivelExperiencia: "Iniciante",
   faixaSalarial: "",
   jaTentouResolver: "",
   maiorDorEmocional: "",
   maiorMedo: "",
   oQueFariaAdiar: "",
   pfPjOuAmbos: "Ambos",
-  focoDiversidadeBolsas: "",
   valorCheio: "",
   valorPromocional: "",
   parcelamento: "",

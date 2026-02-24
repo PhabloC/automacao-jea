@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import type {
   FormularioEstrategicoData,
   NivelCurso,
@@ -10,6 +11,7 @@ import type {
 import { INITIAL_FORM_DATA } from "./types";
 
 const STEPS = [
+  "Identificação",
   "Visão geral do curso",
   "Posicionamento e público-alvo",
   "Oferta e condições comerciais",
@@ -20,9 +22,10 @@ const NIVEL_OPCOES: NivelCurso[] = ["Iniciante", "Intermediário", "Avançado"];
 const MODALIDADE_OPCOES: ModalidadeCurso[] = ["Ao vivo", "Gravado", "Híbrido"];
 const PF_PJ_OPCOES: PfPj[] = ["PF", "PJ", "Ambos"];
 
-type StepIndex = 0 | 1 | 2 | 3;
+type StepIndex = 0 | 1 | 2 | 3 | 4;
 
 const REQUIRED_FIELDS_BY_STEP: (keyof FormularioEstrategicoData)[][] = [
+  ["nome", "email", "telefone"],
   [
     "nomeOficialCurso",
     "subtituloPromessa",
@@ -58,12 +61,17 @@ const isStepValid = (
   const fields = REQUIRED_FIELDS_BY_STEP[stepIndex];
   return fields.every((key) => {
     const value = data[key];
+    if (key === "telefone" && typeof value === "string") {
+      const digits = value.replace(/\D/g, "");
+      return digits.length >= 10;
+    }
     return typeof value === "string" ? value.trim() !== "" : true;
   });
 };
 
 export default function FormularioEstrategico() {
   const [step, setStep] = useState<StepIndex>(0);
+  const [showThankYou, setShowThankYou] = useState(false);
   const [formData, setFormData] =
     useState<FormularioEstrategicoData>(INITIAL_FORM_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,7 +91,7 @@ export default function FormularioEstrategico() {
   );
 
   const handleNext = useCallback(() => {
-    if (step < 3) setStep((s) => (s + 1) as StepIndex);
+    if (step < 4) setStep((s) => (s + 1) as StepIndex);
   }, [step]);
 
   const handlePrev = useCallback(() => {
@@ -107,12 +115,9 @@ export default function FormularioEstrategico() {
             : data?.details ?? "Falha no envio";
         throw new Error(msg);
       }
-      setSubmitMessage({
-        type: "success",
-        text: "Formulário enviado com sucesso!",
-      });
       setFormData(INITIAL_FORM_DATA);
       setStep(0);
+      setShowThankYou(true);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Erro ao enviar. Tente novamente.";
@@ -127,6 +132,27 @@ export default function FormularioEstrategico() {
 
   const currentStepValid = isStepValid(formData, step);
 
+  if (showThankYou) {
+    return (
+      <div className="w-full max-w-md mx-auto px-4 py-12 text-center">
+        <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-red-900/30 shadow-2xl p-8 sm:p-10 flex flex-col items-center gap-6">
+          <Image
+            src="/logo.png"
+            alt="J&A"
+            width={120}
+            height={48}
+            className="h-12 w-auto"
+          />
+          <h2 className="text-2xl font-bold text-white">Obrigado</h2>
+          <p className="text-gray-300 text-sm leading-relaxed">
+            Sua solicitação foi recebida. Em breve entraremos em contato com
+            prazos e próximos passos.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-8">
       <div className="mb-8 text-center">
@@ -134,7 +160,7 @@ export default function FormularioEstrategico() {
           Formulário Estratégico de Lançamento de Curso
         </h1>
         <p className="text-gray-400 text-sm">
-          Etapa {step + 1} de 4 — {STEPS[step]}
+          Etapa {step + 1} de 5 — {STEPS[step]}
         </p>
         <div className="mt-4 flex gap-2 justify-center">
           {STEPS.map((_, i) => (
@@ -154,15 +180,18 @@ export default function FormularioEstrategico() {
 
       <div className="bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-red-900/30 shadow-2xl p-6 sm:p-8">
         {step === 0 && (
-          <Step1VisaoGeral formData={formData} updateField={updateField} />
+          <Step0Identificacao formData={formData} updateField={updateField} />
         )}
         {step === 1 && (
-          <Step2Posicionamento formData={formData} updateField={updateField} />
+          <Step1VisaoGeral formData={formData} updateField={updateField} />
         )}
         {step === 2 && (
-          <Step3Oferta formData={formData} updateField={updateField} />
+          <Step2Posicionamento formData={formData} updateField={updateField} />
         )}
         {step === 3 && (
+          <Step3Oferta formData={formData} updateField={updateField} />
+        )}
+        {step === 4 && (
           <Step4MetaFinanceira formData={formData} updateField={updateField} />
         )}
 
@@ -194,7 +223,7 @@ export default function FormularioEstrategico() {
           >
             Voltar
           </button>
-          {step < 3 ? (
+          {step < 4 ? (
             <button
               type="button"
               onClick={handleNext}
@@ -344,6 +373,73 @@ function FieldDate({
       className="w-full px-4 py-2.5 rounded-xl bg-gray-800/80 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-600/50 scheme-dark"
       aria-label={ariaLabel ?? id}
     />
+  );
+}
+
+const formatTelefoneMask = (value: string): string => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits ? `(${digits}` : "";
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+function Step0Identificacao({
+  formData,
+  updateField,
+}: {
+  formData: FormularioEstrategicoData;
+  updateField: <K extends keyof FormularioEstrategicoData>(
+    field: K,
+    value: FormularioEstrategicoData[K]
+  ) => void;
+}) {
+  const handleTelefoneChange = useCallback(
+    (raw: string) => {
+      const digits = raw.replace(/\D/g, "").slice(0, 11);
+      updateField("telefone", formatTelefoneMask(digits));
+    },
+    [updateField]
+  );
+  return (
+    <div className="space-y-5">
+      <h2 className="text-lg font-semibold text-white border-b border-gray-700 pb-2">
+        Identificação
+      </h2>
+      <div>
+        <FieldLabel id="nome">Nome</FieldLabel>
+        <FieldText
+          id="nome"
+          value={formData.nome}
+          onChange={(v) => updateField("nome", v)}
+          placeholder="Seu nome completo"
+        />
+      </div>
+      <div>
+        <FieldLabel id="email">E-mail</FieldLabel>
+        <input
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => updateField("email", e.target.value)}
+          placeholder="seu@email.com"
+          className="w-full px-4 py-2.5 rounded-xl bg-gray-800/80 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-600/50"
+          aria-label="E-mail"
+        />
+      </div>
+      <div>
+        <FieldLabel id="telefone">Telefone</FieldLabel>
+        <input
+          id="telefone"
+          type="tel"
+          value={formData.telefone}
+          onChange={(e) => handleTelefoneChange(e.target.value)}
+          placeholder="(00) 00000-0000"
+          maxLength={16}
+          className="w-full px-4 py-2.5 rounded-xl bg-gray-800/80 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-600/50"
+          aria-label="Telefone"
+        />
+      </div>
+    </div>
   );
 }
 
@@ -512,11 +608,12 @@ function Step2Posicionamento({
       </div>
       <div>
         <FieldLabel id="nivelExperiencia">Nível de experiência</FieldLabel>
-        <FieldText
+        <FieldSelect
           id="nivelExperiencia"
           value={formData.nivelExperiencia}
           onChange={(v) => updateField("nivelExperiencia", v)}
-          placeholder="Ex: 0–2 anos"
+          options={NIVEL_OPCOES}
+          ariaLabel="Nível de experiência"
         />
       </div>
       <div>
@@ -575,17 +672,6 @@ function Step2Posicionamento({
           onChange={(v) => updateField("pfPjOuAmbos", v)}
           options={PF_PJ_OPCOES}
           ariaLabel="Público PF, PJ ou ambos"
-        />
-      </div>
-      <div>
-        <FieldLabel id="focoDiversidadeBolsas">
-          Existe foco em diversidade, bolsas ou recortes específicos?
-        </FieldLabel>
-        <FieldTextarea
-          id="focoDiversidadeBolsas"
-          value={formData.focoDiversidadeBolsas}
-          onChange={(v) => updateField("focoDiversidadeBolsas", v)}
-          placeholder="Ex: Bolsas para grupos sub-representados"
         />
       </div>
     </div>
