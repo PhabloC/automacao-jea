@@ -94,25 +94,31 @@ export default function FormularioEstrategico() {
     setIsSubmitting(true);
     setSubmitMessage(null);
     try {
-      const response = await fetch(
-        "https://gateway.jeamarketing.com.br/webhook/formulario",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        }
-      );
-      if (!response.ok) throw new Error("Falha no envio");
+      const response = await fetch("/api/formulario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const msg =
+          typeof data?.error === "string"
+            ? data.error
+            : data?.details ?? "Falha no envio";
+        throw new Error(msg);
+      }
       setSubmitMessage({
         type: "success",
         text: "Formulário enviado com sucesso!",
       });
       setFormData(INITIAL_FORM_DATA);
       setStep(0);
-    } catch {
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Erro ao enviar. Tente novamente.";
       setSubmitMessage({
         type: "error",
-        text: "Erro ao enviar. Tente novamente.",
+        text: message,
       });
     } finally {
       setIsSubmitting(false);
