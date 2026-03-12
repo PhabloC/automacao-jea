@@ -31,7 +31,12 @@ const REQUIRED_FIELDS_BY_STEP: (keyof FormularioEstrategicoData)[][] = [
     "subtituloPromessa",
     "problemaEspecifico",
     "transformacaoConcreta",
+    "nivel",
+    "modalidade",
     "cargaHoraria",
+    "certificacao",
+    "diferenciaisReais",
+    "porQueMelhorQueYoutube",
   ],
   [
     "alunoIdeal",
@@ -39,19 +44,32 @@ const REQUIRED_FIELDS_BY_STEP: (keyof FormularioEstrategicoData)[][] = [
     "area",
     "nivelExperiencia",
     "faixaSalarial",
+    "jaTentouResolver",
     "maiorDorEmocional",
     "maiorMedo",
+    "oQueFariaAdiar",
+    "pfPjOuAmbos",
   ],
   [
     "valorCheio",
     "valorPromocional",
     "parcelamento",
+    "politicaDesconto",
     "garantia",
+    "bonusIncluidos",
+    "vagasLimitadas",
     "dataAbertura",
     "dataFechamento",
     "dataInicioAulas",
   ],
-  ["metaFaturamento", "metaAlunos", "ticketMedio"],
+  [
+    "metaFaturamento",
+    "metaAlunos",
+    "ticketMedio",
+    "metaCPL",
+    "metaCPA",
+    "orcamentoMidia",
+  ],
 ];
 
 const isStepValid = (
@@ -272,7 +290,7 @@ function FieldText({
   value,
   onChange,
   placeholder,
-  required,
+  required = true,
 }: {
   id: string;
   value: string;
@@ -299,12 +317,14 @@ function FieldTextarea({
   value,
   onChange,
   placeholder,
+  required = true,
   rows = 3,
 }: {
   id: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  required?: boolean;
   rows?: number;
 }) {
   return (
@@ -313,6 +333,7 @@ function FieldTextarea({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
+      required={required}
       rows={rows}
       className="w-full px-4 py-2.5 rounded-xl bg-gray-800/80 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-600/50 resize-y min-h-[80px]"
       aria-label={id}
@@ -326,18 +347,21 @@ function FieldSelect<T extends string>({
   onChange,
   options,
   ariaLabel,
+  required = true,
 }: {
   id: string;
   value: T;
   onChange: (v: T) => void;
   options: readonly T[];
   ariaLabel?: string;
+  required?: boolean;
 }) {
   return (
     <select
       id={id}
       value={value}
       onChange={(e) => onChange(e.target.value as T)}
+      required={required}
       className="w-full px-4 py-2.5 rounded-xl bg-gray-800/80 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-600/50"
       aria-label={ariaLabel ?? id}
     >
@@ -356,12 +380,14 @@ function FieldDate({
   onChange,
   min,
   ariaLabel,
+  required = true,
 }: {
   id: string;
   value: string;
   onChange: (v: string) => void;
   min?: string;
   ariaLabel?: string;
+  required?: boolean;
 }) {
   return (
     <input
@@ -370,6 +396,7 @@ function FieldDate({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       min={min}
+      required={required}
       className="w-full px-4 py-2.5 rounded-xl bg-gray-800/80 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-600/50 scheme-dark"
       aria-label={ariaLabel ?? id}
     />
@@ -422,6 +449,7 @@ function Step0Identificacao({
           value={formData.email}
           onChange={(e) => updateField("email", e.target.value)}
           placeholder="seu@email.com"
+          required
           className="w-full px-4 py-2.5 rounded-xl bg-gray-800/80 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-600/50"
           aria-label="E-mail"
         />
@@ -435,6 +463,7 @@ function Step0Identificacao({
           onChange={(e) => handleTelefoneChange(e.target.value)}
           placeholder="(00) 00000-0000"
           maxLength={16}
+          required
           className="w-full px-4 py-2.5 rounded-xl bg-gray-800/80 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-600/50"
           aria-label="Telefone"
         />
