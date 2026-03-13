@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
@@ -69,11 +72,21 @@ export async function GET(request: NextRequest) {
       provider: u.app_metadata?.provider || "email",
       created_at: u.created_at,
       last_sign_in_at: u.last_sign_in_at,
+      last_access_at: u.last_sign_in_at || u.updated_at || u.created_at,
       role: permissionsMap.get(u.id) || null,
       has_permission: permissionsMap.has(u.id),
     }));
 
-    return NextResponse.json({ users });
+    return NextResponse.json(
+      { users },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error) {
     console.error("Erro na API de usuários:", error);
     return NextResponse.json(

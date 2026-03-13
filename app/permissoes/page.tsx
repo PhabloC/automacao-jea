@@ -80,6 +80,7 @@ export default function PermissoesPage() {
             provider: "google",
             created_at: new Date().toISOString(),
             last_sign_in_at: new Date().toISOString(),
+            last_access_at: new Date().toISOString(),
             role: "admin",
             has_permission: true,
           },
@@ -91,6 +92,7 @@ export default function PermissoesPage() {
             provider: "google",
             created_at: new Date().toISOString(),
             last_sign_in_at: new Date().toISOString(),
+            last_access_at: new Date().toISOString(),
             role: null,
             has_permission: false,
           },
@@ -100,6 +102,7 @@ export default function PermissoesPage() {
       }
 
       const response = await fetch("/api/users", {
+        cache: "no-store",
         headers: {
           Authorization: `Bearer ${session?.access_token}`,
         },
@@ -568,7 +571,8 @@ export default function PermissoesPage() {
                           </p>
                           <p className="text-sm text-gray-400">{u.email}</p>
                           <p className="text-xs text-gray-500">
-                            Último acesso: {formatDate(u.last_sign_in_at)}
+                            Último acesso:{" "}
+                            {formatDate(u.last_access_at || u.last_sign_in_at)}
                           </p>
                         </div>
                       </div>

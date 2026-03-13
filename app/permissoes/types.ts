@@ -6,6 +6,7 @@ export interface UserData {
   provider: string;
   created_at: string;
   last_sign_in_at: string | null;
+  last_access_at: string | null;
   role: "admin" | "editor" | null;
   has_permission: boolean;
 }
