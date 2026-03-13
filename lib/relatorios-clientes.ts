@@ -13,6 +13,7 @@ export interface RelatorioCliente {
   /** Valor em reais: avisar quando saldo Meta estiver abaixo deste valor (número). */
   avisar_saldo_abaixo_de: number | null;
   campanha_google: boolean;
+  notifica_cliente: boolean;
   mensagem_meta: string | null;
   mensagem_google: string | null;
 }

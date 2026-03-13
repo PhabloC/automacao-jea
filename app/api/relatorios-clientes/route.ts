@@ -73,6 +73,7 @@ export async function GET(request: NextRequest) {
           ? Number(row.avisar_saldo_abaixo_de)
           : null,
       campanha_google: !!row.campanha_google,
+      notifica_cliente: !!row.notifica_cliente,
       mensagem_meta: row.mensagem_meta ?? null,
       mensagem_google: row.mensagem_google ?? null,
     }));
@@ -115,6 +116,7 @@ export async function POST(request: NextRequest) {
       saldo_meta,
       avisar_saldo_abaixo_de,
       campanha_google,
+      notifica_cliente,
       mensagem_meta,
       mensagem_google,
     } = body;
@@ -162,6 +164,7 @@ export async function POST(request: NextRequest) {
       campanha_meta: !!campanha_meta,
       saldo_meta: !!saldo_meta,
       campanha_google: !!campanha_google,
+      notifica_cliente: !!notifica_cliente,
       mensagem_meta: mensagem_meta != null ? String(mensagem_meta) : null,
       mensagem_google: mensagem_google != null ? String(mensagem_google) : null,
     };
@@ -199,6 +202,7 @@ export async function POST(request: NextRequest) {
           ? Number(data.avisar_saldo_abaixo_de)
           : null,
       campanha_google: !!data.campanha_google,
+      notifica_cliente: !!data.notifica_cliente,
       mensagem_meta: data.mensagem_meta ?? null,
       mensagem_google: data.mensagem_google ?? null,
     };

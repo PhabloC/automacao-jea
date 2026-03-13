@@ -46,6 +46,7 @@ function mapRowToCliente(row: Record<string, unknown>) {
         ? Number(row.avisar_saldo_abaixo_de)
         : null,
     campanha_google: !!row.campanha_google,
+    notifica_cliente: !!row.notifica_cliente,
     mensagem_meta: row.mensagem_meta ?? null,
     mensagem_google: row.mensagem_google ?? null,
   };
@@ -88,6 +89,7 @@ export async function PATCH(
       "saldo_meta",
       "avisar_saldo_abaixo_de",
       "campanha_google",
+      "notifica_cliente",
       "mensagem_meta",
       "mensagem_google",
     ];
@@ -119,7 +121,8 @@ export async function PATCH(
         } else if (
           key === "campanha_meta" ||
           key === "saldo_meta" ||
-          key === "campanha_google"
+          key === "campanha_google" ||
+          key === "notifica_cliente"
         ) {
           update[key] = !!value;
         }

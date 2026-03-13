@@ -79,6 +79,7 @@ export default function RelatoriosPage() {
     saldo_meta: false,
     avisar_saldo_abaixo_de: null,
     campanha_google: false,
+    notifica_cliente: false,
   });
   const [formError, setFormError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -214,6 +215,7 @@ export default function RelatoriosPage() {
       saldo_meta: false,
       avisar_saldo_abaixo_de: null,
       campanha_google: false,
+      notifica_cliente: false,
     });
     setFormError("");
     setSelectedN8nClientId("");
@@ -253,6 +255,7 @@ export default function RelatoriosPage() {
       saldo_meta: client.saldo_meta,
       avisar_saldo_abaixo_de: client.avisar_saldo_abaixo_de ?? null,
       campanha_google: client.campanha_google,
+      notifica_cliente: client.notifica_cliente,
     });
     setFormError("");
     setClientModal({ open: true, mode: "edit", client });
@@ -1076,6 +1079,24 @@ export default function RelatoriosPage() {
                         }))
                       }
                       disabled={!formData.conta_anuncio_google}
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-400 text-sm">
+                      Notificar cliente
+                    </span>
+                    <FormToggleWithIcons
+                      checked={formData.notifica_cliente}
+                      onToggle={() =>
+                        setFormData((p) => ({
+                          ...p,
+                          notifica_cliente: !p.notifica_cliente,
+                        }))
+                      }
+                      disabled={
+                        !formData.conta_anuncio_meta &&
+                        !formData.conta_anuncio_google
+                      }
                     />
                   </div>
                 </div>
