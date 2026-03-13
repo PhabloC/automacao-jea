@@ -337,7 +337,11 @@ export default function RelatoriosPage() {
 
   const handleToggleField = async (
     client: RelatorioCliente,
-    field: "campanha_meta" | "saldo_meta" | "campanha_google",
+    field:
+      | "campanha_meta"
+      | "saldo_meta"
+      | "campanha_google"
+      | "notifica_cliente",
     value: boolean,
   ) => {
     try {
@@ -556,6 +560,9 @@ export default function RelatoriosPage() {
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Relatórios Google
                       </th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Notificar cliente
+                      </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Frequência
                       </th>
@@ -657,6 +664,32 @@ export default function RelatoriosPage() {
                               <ToggleSwitch
                                 checked={client.campanha_google}
                                 disabled={!client.conta_anuncio_google}
+                              />
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleToggleField(
+                                  client,
+                                  "notifica_cliente",
+                                  !client.notifica_cliente,
+                                )
+                              }
+                              disabled={
+                                !client.conta_anuncio_meta &&
+                                !client.conta_anuncio_google
+                              }
+                              className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                              aria-label="Notificar cliente"
+                            >
+                              <ToggleSwitch
+                                checked={client.notifica_cliente}
+                                disabled={
+                                  !client.conta_anuncio_meta &&
+                                  !client.conta_anuncio_google
+                                }
                               />
                             </button>
                           </td>
